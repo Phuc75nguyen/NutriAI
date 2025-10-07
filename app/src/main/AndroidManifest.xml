@@ -5,7 +5,9 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
     <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -16,7 +18,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NutriAI"
         tools:targetApi="31">
-        <activity android:name=".ScaningFoodActivity"
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ScaningFoodActivity"
             android:exported="true"
             android:screenOrientation="portrait" />
         <activity
@@ -29,4 +35,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>
