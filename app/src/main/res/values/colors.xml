@@ -4,4 +4,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="hint_gray">#C3C3C3</color>
     <color name="brand_orange">#FF5A16</color>
+    <color name="lavender">#DDC0FF</color>
+    <color name="gray">#7F7F7F</color>
+    <color name="bnv_bg">#202020</color>
+    <color name="bnv_checked">#6C4CF7</color>
+    <color name="bnv_unchecked">#B3FFFFFF</color>
 </resources>

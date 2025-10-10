@@ -15,7 +15,7 @@
         android:layout_marginTop="54dp"
         android:layout_gravity="center"
         android:background="@drawable/bg_btn_back"
-        android:src="@drawable/arrow_back"
+        android:src="@drawable/ic_arrow_back"
         app:layout_constraintTop_toTopOf="@id/main"
         app:layout_constraintStart_toStartOf="@id/main"
 
