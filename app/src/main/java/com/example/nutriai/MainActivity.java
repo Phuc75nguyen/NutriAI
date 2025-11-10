@@ -20,8 +20,8 @@ public class MainActivity extends AppCompatActivity {
         btnScanFood.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ScaningFoodActivity.class);
-                startActivity(intent);
+                Intent intent2 = new Intent(MainActivity.this, ScaningFoodActivity.class);
+                startActivity(intent2);
             }
 
         });
