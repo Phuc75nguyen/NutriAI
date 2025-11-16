@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#0F0F0F"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LucfinFragment">
+
+    <!-- CUSTOM HEADER -->
+    <RelativeLayout
+        android:id="@+id/header_bar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" Lucfin Chatbot"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_centerInParent="true"/>
+
+        <ImageView
+            android:id="@+id/iv_chat_icon"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_chat"
+            android:layout_alignParentEnd="true"/>
+    </RelativeLayout>
+
+    <!-- CONTENT SCROLL -->
+    <ScrollView
+        android:id="@+id/scroll_area"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/header_bar"
+        app:layout_constraintBottom_toTopOf="@id/input_layout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- ROBOT -->
+
+            <!-- MESSAGE 1 -->
+            <ImageView
+                android:id="@+id/iv_robot_gif"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="center_horizontal"
+                xmlns:tools="http.schemas.android.com/tools"
+                tools:src="@drawable/robot_animation" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chat_bubble"
+                android:padding="18dp"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hi, you can ask me anything about names"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"/>
+            </LinearLayout>
+
+            <!-- MESSAGE 2 + CHIPS -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_chat_bubble"
+                android:padding="18dp"
+                android:layout_marginTop="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I suggest you some names you can ask me.."
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- ROW 1 -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView style="@style/ChipStyle" android:text="Business names"/>
+                    <TextView style="@style/ChipStyle" android:text="Human names"/>
+                    <TextView style="@style/ChipStyle" android:text="Games names"/>
+                </LinearLayout>
+
+                <!-- ROW 2 -->
+                <LinearLayout
+                    android:layout_marginTop="10dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView style="@style/ChipStyle" android:text="Pet names"/>
+                    <TextView style="@style/ChipStyle" android:text="Dish names"/>
+                    <TextView style="@style/ChipStyle" android:text="Character names"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- INPUT BAR AREA -->
+    <RelativeLayout
+        android:id="@+id/input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:padding="20dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <EditText
+            android:id="@+id/et_input"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@drawable/bg_input"
+            android:drawableEnd="@drawable/ic_mic"
+            android:drawablePadding="10dp"
+            android:hint="Generate a name of ...."
+            android:padding="10dp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#777777" />
+
+        <ImageView
+            android:id="@+id/btn_send"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:src="@drawable/ic_send"
+            android:padding="12dp"
+            android:background="@drawable/bg_button"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
