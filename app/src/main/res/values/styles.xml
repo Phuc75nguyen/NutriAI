@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <style name="ChipStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">38dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:textColor">#CFCBFF</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:layout_marginEnd">10dp</item>
+    </style>
+</resources>

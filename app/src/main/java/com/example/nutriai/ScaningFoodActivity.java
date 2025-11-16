@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.TextureView;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -37,7 +36,7 @@ public class ScaningFoodActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.scaning_food);
+        setContentView(R.layout.activity_scaning_food);
 
         cameraPreview = findViewById(R.id.camera_preview);
         btnCapture = findViewById(R.id.btn_capture);
