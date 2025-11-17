@@ -34,7 +34,6 @@ android {
 dependencies {
 
     implementation(libs.appcompat)
-    implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.navigation.fragment)
@@ -48,7 +47,7 @@ dependencies {
     implementation ("androidx.camera:camera-lifecycle:1.4.0") //
     implementation ("androidx.camera:camera-view:1.4.0")     //
     implementation ("androidx.camera:camera-video:1.4.0")   //
-    implementation ("androidx.camera:camera-core:1.4.0")     // <-- THÊM DÒNG NÀY (RẤT QUAN TRỌNG)
+    implementation ("androidx.camera:camera-core:1.4.0")     //
 
     implementation("com.github.hadibtf:SemiCircleArcProgressBar:1.1.1")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")

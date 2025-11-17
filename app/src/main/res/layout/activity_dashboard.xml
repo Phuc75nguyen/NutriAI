@@ -30,7 +30,6 @@
         app:itemIconTint="@drawable/bnv_icon_tint"
         app:itemTextColor="@drawable/bnv_text_tint"
         app:labelVisibilityMode="labeled"
-        app:itemActiveIndicatorEnabled="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
