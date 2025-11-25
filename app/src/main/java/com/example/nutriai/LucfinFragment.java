@@ -1,8 +1,6 @@
 package com.example.nutriai;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,8 +13,16 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.nutriai.api.ChatRequest;
+import com.example.nutriai.api.ChatResponse;
+import com.example.nutriai.api.RetrofitClient;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LucfinFragment extends Fragment {
 
@@ -53,11 +59,6 @@ public class LucfinFragment extends Fragment {
             if (!question.isEmpty()) {
                 sendMessage(question, true);
                 etInput.setText("");
-
-                // Simulate Bot Response
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    sendMessage("This is a fake response from NutriAI bot.", false);
-                }, 1000);
             }
         });
     }
@@ -66,5 +67,29 @@ public class LucfinFragment extends Fragment {
         messageList.add(new Message(content, isUser));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
         rcvChat.scrollToPosition(messageList.size() - 1);
+
+        if (isUser) {
+            callRealApi(content);
+        }
+    }
+
+    private void callRealApi(String query) {
+        ChatRequest request = new ChatRequest(query);
+        RetrofitClient.getApiService().chatWithLucfin(request).enqueue(new Callback<ChatResponse>() {
+            @Override
+            public void onResponse(Call<ChatResponse> call, Response<ChatResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String answer = response.body().getAnswer();
+                    sendMessage(answer, false);
+                } else {
+                    sendMessage("Error: " + response.code(), false);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChatResponse> call, Throwable t) {
+                sendMessage("Error: " + t.getMessage(), false);
+            }
+        });
     }
 }
