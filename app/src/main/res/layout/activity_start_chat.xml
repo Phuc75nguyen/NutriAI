@@ -32,102 +32,41 @@
             android:layout_width="26dp"
             android:layout_height="26dp"
             android:src="@drawable/ic_chat"
-            android:layout_alignParentEnd="true"/>
+            android:layout_alignParentEnd="true"
+            android:contentDescription="Chat Icon"/>
     </RelativeLayout>
 
-    <!-- CONTENT SCROLL -->
-    <ScrollView
-        android:id="@+id/scroll_area"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rcv_chat"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/header_bar"
         app:layout_constraintBottom_toTopOf="@id/input_layout"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:orientation="vertical"
-            android:padding="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <!-- ROBOT -->
-
-            <!-- MESSAGE 1 -->
-            <ImageView
-                android:id="@+id/iv_robot_gif"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
-                android:layout_gravity="center_horizontal"
-                xmlns:tools="http.schemas.android.com/tools"
-                tools:src="@drawable/robot_animation" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_chat_bubble"
-                android:padding="18dp"
-                android:layout_marginTop="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Hi, you can ask me anything about names"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"/>
-            </LinearLayout>
-
-            <!-- MESSAGE 2 + CHIPS -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_chat_bubble"
-                android:padding="18dp"
-                android:layout_marginTop="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="I suggest you some names you can ask me.."
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="12dp"/>
-
-                <!-- ROW 1 -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView style="@style/ChipStyle" android:text="Business names"/>
-                    <TextView style="@style/ChipStyle" android:text="Human names"/>
-                    <TextView style="@style/ChipStyle" android:text="Games names"/>
-                </LinearLayout>
-
-                <!-- ROW 2 -->
-                <LinearLayout
-                    android:layout_marginTop="10dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView style="@style/ChipStyle" android:text="Pet names"/>
-                    <TextView style="@style/ChipStyle" android:text="Dish names"/>
-                    <TextView style="@style/ChipStyle" android:text="Character names"/>
-                </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:clipToPadding="false"
+        android:paddingBottom="10dp"/>
 
     <!-- INPUT BAR AREA -->
     <RelativeLayout
         android:id="@+id/input_layout"
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:padding="20dp"
+        android:padding="10dp"
         app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageView
+            android:id="@+id/btn_send"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
+            android:src="@drawable/ic_send"
+            android:padding="12dp"
+            android:background="@drawable/bg_button"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Send Button"/>
 
         <EditText
             android:id="@+id/et_input"
@@ -139,17 +78,12 @@
             android:hint="Generate a name of ...."
             android:padding="10dp"
             android:textColor="#FFFFFF"
-            android:textColorHint="#777777" />
+            android:textColorHint="#777777"
+            android:layout_toStartOf="@id/btn_send"
+            android:layout_marginEnd="10dp"
+            android:layout_centerVertical="true"
+            android:inputType="textMultiLine|textCapSentences"/>
 
-        <ImageView
-            android:id="@+id/btn_send"
-            android:layout_width="55dp"
-            android:layout_height="55dp"
-            android:src="@drawable/ic_send"
-            android:padding="12dp"
-            android:background="@drawable/bg_button"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"/>
     </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

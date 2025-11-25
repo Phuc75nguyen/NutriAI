@@ -8,12 +8,11 @@
     android:background="#000"
     tools:context=".ScaningFoodActivity">
 
-    <!-- Camera preview -->
-    <TextureView
+    <!-- Camera preview using PreviewView for better stability -->
+    <androidx.camera.view.PreviewView
         android:id="@+id/camera_preview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop" />
+        android:layout_height="match_parent" />
 
     <!-- Mờ nền ngoài khung scan -->
     <View

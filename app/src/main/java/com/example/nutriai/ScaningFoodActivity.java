@@ -3,17 +3,16 @@ package com.example.nutriai;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.view.TextureView;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -25,7 +24,7 @@ import java.util.concurrent.Executors;
 
 public class ScaningFoodActivity extends AppCompatActivity {
 
-    private TextureView cameraPreview;
+    private PreviewView cameraPreview;
     private ImageButton btnCapture, btnClose;
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
@@ -44,17 +43,17 @@ public class ScaningFoodActivity extends AppCompatActivity {
 
         cameraExecutor = Executors.newSingleThreadExecutor();
 
-        // Xin quyền camera
+        // Request camera permissions
         if (allPermissionsGranted()) {
             startCamera();
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
 
-        // Nút chụp ảnh
+        // Capture button
         btnCapture.setOnClickListener(v -> takePhoto());
 
-        // Nút đóng
+        // Close button
         btnClose.setOnClickListener(v -> finish());
     }
 
@@ -70,22 +69,12 @@ public class ScaningFoodActivity extends AppCompatActivity {
 
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
-                preview.setSurfaceProvider(request1 -> cameraPreview.getSurfaceTexture().release());
+                // Connect camera to PreviewView
+                preview.setSurfaceProvider(cameraPreview.getSurfaceProvider());
 
                 cameraProvider.unbindAll();
-                Camera camera = cameraProvider.bindToLifecycle(
+                cameraProvider.bindToLifecycle(
                         this, cameraSelector, preview, imageCapture
-                );
-
-                // Kết nối camera với TextureView
-                preview.setSurfaceProvider(
-                        request -> {
-                            request.provideSurface(
-                                    new android.view.Surface(cameraPreview.getSurfaceTexture()),
-                                    cameraExecutor,
-                                    result -> {}
-                            );
-                        }
                 );
 
             } catch (ExecutionException | InterruptedException e) {
@@ -109,7 +98,7 @@ public class ScaningFoodActivity extends AppCompatActivity {
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
                         Toast.makeText(ScaningFoodActivity.this, "Photo captured!", Toast.LENGTH_SHORT).show();
 
-                        // TODO: sau này gọi model AI ở đây để nhận diện món ăn
+                        // TODO: Call AI model here to detect food
                         // detectFood(photoFile.getAbsolutePath());
                     }
 
