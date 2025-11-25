@@ -1,30 +1,34 @@
 package com.example.nutriai;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment; // QUAN TRỌNG: Phải dùng androidx
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LucfinFragment extends Fragment {
 
-    private ImageView ivRobotGif;
+    private RecyclerView rcvChat;
+    private ChatAdapter chatAdapter;
+    private List<Message> messageList;
     private EditText etInput;
     private ImageView btnSend;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Inflate layout chat
         return inflater.inflate(R.layout.activity_start_chat, container, false);
     }
 
@@ -32,27 +36,35 @@ public class LucfinFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ View
-        ivRobotGif = view.findViewById(R.id.iv_robot_gif);
+        // Initialize Views
+        rcvChat = view.findViewById(R.id.rcv_chat);
         etInput = view.findViewById(R.id.et_input);
         btnSend = view.findViewById(R.id.btn_send);
 
-        // 2. Kích hoạt ảnh động Robot bằng Glide
-        Glide.with(this)
-                .asGif()
-                .load(R.drawable.robot_animation)
-                .into(ivRobotGif);
+        // Setup RecyclerView
+        messageList = new ArrayList<>();
+        chatAdapter = new ChatAdapter(messageList);
+        rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
+        rcvChat.setAdapter(chatAdapter);
 
-        // 3. Xử lý nút Gửi
+        // Handle Send Button
         btnSend.setOnClickListener(v -> {
             String question = etInput.getText().toString().trim();
             if (!question.isEmpty()) {
-                // Hiện tại chưa có AI, nên mình Toast lên để test giao diện trước
-                Toast.makeText(getContext(), "Bạn hỏi: " + question, Toast.LENGTH_SHORT).show();
-
-                // Xóa ô nhập sau khi gửi
+                sendMessage(question, true);
                 etInput.setText("");
+
+                // Simulate Bot Response
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    sendMessage("This is a fake response from NutriAI bot.", false);
+                }, 1000);
             }
         });
+    }
+
+    private void sendMessage(String content, boolean isUser) {
+        messageList.add(new Message(content, isUser));
+        chatAdapter.notifyItemInserted(messageList.size() - 1);
+        rcvChat.scrollToPosition(messageList.size() - 1);
     }
 }
