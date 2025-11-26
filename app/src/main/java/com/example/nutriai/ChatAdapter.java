@@ -1,22 +1,27 @@
 package com.example.nutriai;
 
+import android.content.Context; // Import mới
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import io.noties.markwon.Markwon; // Import thư viện Markwon
 import java.util.List;
 
 public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
 
-    private final List<Message> messageList;
+    private List<Message> mListMessage;
+    private Markwon markwon; // Khai báo đối tượng Markwon
 
-    public ChatAdapter(List<Message> messageList) {
-        this.messageList = messageList;
+    // --- CẬP NHẬT 1: Constructor nhận thêm Context ---
+    public ChatAdapter(Context context, List<Message> mListMessage) {
+        this.mListMessage = mListMessage;
+        // Khởi tạo Markwon 1 lần duy nhất tại đây để tối ưu hiệu năng
+        this.markwon = Markwon.create(context);
     }
 
     @NonNull
@@ -28,33 +33,40 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
-        Message message = messageList.get(position);
+        Message message = mListMessage.get(position);
+        if (message == null) return;
+
         if (message.isUser()) {
+            // User: Hiển thị bình thường (vì User ít khi gõ markdown)
             holder.layoutUser.setVisibility(View.VISIBLE);
             holder.layoutBot.setVisibility(View.GONE);
-            holder.tvUserMessage.setText(message.getContent());
+            holder.tvUserMsg.setText(message.getContent());
         } else {
-            holder.layoutUser.setVisibility(View.GONE);
+            // Bot: Hiển thị & Render Markdown
             holder.layoutBot.setVisibility(View.VISIBLE);
-            holder.tvBotMessage.setText(message.getContent());
+            holder.layoutUser.setVisibility(View.GONE);
+
+            // --- CẬP NHẬT 2: Dùng Markwon để hiển thị ---
+            // Nó sẽ tự động biến **text** thành in đậm, - thành gạch đầu dòng...
+            markwon.setMarkdown(holder.tvBotMsg, message.getContent());
         }
     }
 
     @Override
     public int getItemCount() {
-        return messageList.size();
+        return mListMessage != null ? mListMessage.size() : 0;
     }
 
-    static class ChatViewHolder extends RecyclerView.ViewHolder {
-        LinearLayout layoutBot, layoutUser;
-        TextView tvBotMessage, tvUserMessage;
+    public static class ChatViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout layoutUser, layoutBot;
+        TextView tvUserMsg, tvBotMsg;
 
         public ChatViewHolder(@NonNull View itemView) {
             super(itemView);
-            layoutBot = itemView.findViewById(R.id.layout_bot);
             layoutUser = itemView.findViewById(R.id.layout_user);
-            tvBotMessage = itemView.findViewById(R.id.tv_bot_message);
-            tvUserMessage = itemView.findViewById(R.id.tv_user_message);
+            layoutBot = itemView.findViewById(R.id.layout_bot);
+            tvUserMsg = itemView.findViewById(R.id.tv_user_message);
+            tvBotMsg = itemView.findViewById(R.id.tv_bot_message);
         }
     }
 }

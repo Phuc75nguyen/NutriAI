@@ -49,7 +49,7 @@ public class LucfinFragment extends Fragment {
 
         // Setup RecyclerView
         messageList = new ArrayList<>();
-        chatAdapter = new ChatAdapter(messageList);
+        chatAdapter = new ChatAdapter(requireContext(), messageList);
         rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
         rcvChat.setAdapter(chatAdapter);
 
