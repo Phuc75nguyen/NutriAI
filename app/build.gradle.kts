@@ -60,6 +60,9 @@ dependencies {
     // retrofit để gọi api
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Markwon: Thư viện render Markdown siêu nhẹ cho Android
+    implementation("io.noties.markwon:core:4.6.2")
+
 
 
 }
