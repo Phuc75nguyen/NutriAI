@@ -54,11 +54,7 @@ public class LucfinFragment extends Fragment {
 
         // Setup RecyclerView
         messageList = new ArrayList<>();
-<<<<<<< HEAD
-        chatAdapter = new ChatAdapter(requireContext(), messageList);
-=======
         chatAdapter = new ChatAdapter(messageList, markwon);
->>>>>>> 26670c1 (update UI Lucfin markdown image)
         rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
         rcvChat.setAdapter(chatAdapter);
 
@@ -91,7 +87,7 @@ public class LucfinFragment extends Fragment {
                     String answer = response.body().getAnswer();
                     String image = response.body().getImage();
                     List<String> sourceDocs = response.body().getSourceDocuments();
-
+                    
                     String sources = null;
                     if (sourceDocs != null && !sourceDocs.isEmpty()) {
                         sources = TextUtils.join(", ", sourceDocs);
