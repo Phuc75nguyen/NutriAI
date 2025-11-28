@@ -60,15 +60,9 @@ dependencies {
     // retrofit để gọi api
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-<<<<<<< HEAD
     // Markwon: Thư viện render Markdown siêu nhẹ cho Android
     implementation("io.noties.markwon:core:4.6.2")
 
 
-=======
-    
-    // Markwon for Markdown rendering
-    implementation("io.noties.markwon:core:4.6.2")
->>>>>>> 26670c1 (update UI Lucfin markdown image)
 
 }
