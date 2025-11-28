@@ -1,6 +1,7 @@
 package com.example.nutriai;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.example.nutriai.api.RetrofitClient;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.noties.markwon.Markwon;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -47,9 +49,16 @@ public class LucfinFragment extends Fragment {
         etInput = view.findViewById(R.id.et_input);
         btnSend = view.findViewById(R.id.btn_send);
 
+        // Setup Markwon
+        Markwon markwon = Markwon.create(requireContext());
+
         // Setup RecyclerView
         messageList = new ArrayList<>();
+<<<<<<< HEAD
         chatAdapter = new ChatAdapter(requireContext(), messageList);
+=======
+        chatAdapter = new ChatAdapter(messageList, markwon);
+>>>>>>> 26670c1 (update UI Lucfin markdown image)
         rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
         rcvChat.setAdapter(chatAdapter);
 
@@ -57,14 +66,14 @@ public class LucfinFragment extends Fragment {
         btnSend.setOnClickListener(v -> {
             String question = etInput.getText().toString().trim();
             if (!question.isEmpty()) {
-                sendMessage(question, true);
+                sendMessage(question, true, null, null);
                 etInput.setText("");
             }
         });
     }
 
-    private void sendMessage(String content, boolean isUser) {
-        messageList.add(new Message(content, isUser));
+    private void sendMessage(String content, boolean isUser, String imageUrl, String sources) {
+        messageList.add(new Message(content, isUser, imageUrl, sources));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
         rcvChat.scrollToPosition(messageList.size() - 1);
 
@@ -80,15 +89,23 @@ public class LucfinFragment extends Fragment {
             public void onResponse(Call<ChatResponse> call, Response<ChatResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     String answer = response.body().getAnswer();
-                    sendMessage(answer, false);
+                    String image = response.body().getImage();
+                    List<String> sourceDocs = response.body().getSourceDocuments();
+
+                    String sources = null;
+                    if (sourceDocs != null && !sourceDocs.isEmpty()) {
+                        sources = TextUtils.join(", ", sourceDocs);
+                    }
+
+                    sendMessage(answer, false, image, sources);
                 } else {
-                    sendMessage("Error: " + response.code(), false);
+                    sendMessage("Error: " + response.code(), false, null, null);
                 }
             }
 
             @Override
             public void onFailure(Call<ChatResponse> call, Throwable t) {
-                sendMessage("Error: " + t.getMessage(), false);
+                sendMessage("Error: " + t.getMessage(), false, null, null);
             }
         });
     }
