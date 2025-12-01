@@ -1,0 +1,13 @@
+package com.example.nutriai.api;
+
+public class ChatMessageResponse {
+    private String answer;
+
+    public String getAnswer() {
+        return answer;
+    }
+
+    public void setAnswer(String answer) {
+        this.answer = answer;
+    }
+}

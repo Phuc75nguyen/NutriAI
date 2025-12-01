@@ -52,6 +52,7 @@
             app:layout_constraintTop_toBottomOf="@id/backButton">
 
             <ImageView
+                android:id="@+id/iv_food_image"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
@@ -59,17 +60,36 @@
                 tools:src="@tools:sample/backgrounds/scenic" />
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Diet Title (Food Name) -->
+        <TextView
+            android:id="@+id/tvDietTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginHorizontal="16dp"
+            android:text="Food Name"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/foodImageCard" />
+
+        <!-- Nutrition Grid -->
         <GridLayout
             android:id="@+id/nutritionGrid"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:columnCount="2"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/foodImageCard">
+            app:layout_constraintTop_toBottomOf="@id/tvDietTitle">
 
+            <!-- Calories -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -94,25 +114,28 @@
                         android:textSize="16sp" />
 
                     <TextView
+                        android:id="@+id/tvCalorieValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="2,230 kcal"
+                        android:text="0 kcal"
                         android:textColor="#121212"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <ProgressBar
+                        android:id="@+id/pbCalorie"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="6dp"
                         android:layout_marginTop="8dp"
                         android:max="100"
-                        android:progress="95"
+                        android:progress="0"
                         android:progressDrawable="@drawable/progress_bar_background"
                         android:progressTint="#FFFFFF" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Protein -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -137,25 +160,28 @@
                         android:textSize="16sp" />
 
                     <TextView
+                        android:id="@+id/tvProteinValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="83%"
+                        android:text="0g"
                         android:textColor="#121212"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <ProgressBar
+                        android:id="@+id/pbProtein"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="6dp"
                         android:layout_marginTop="8dp"
                         android:max="100"
-                        android:progress="83"
+                        android:progress="0"
                         android:progressDrawable="@drawable/progress_bar_background"
                         android:progressTint="#FFFFFF" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Carbs -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -179,25 +205,28 @@
                         android:textSize="16sp" />
 
                     <TextView
+                        android:id="@+id/tvCarbValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="50%"
+                        android:text="0g"
                         android:textColor="#121212"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <ProgressBar
+                        android:id="@+id/pbCarb"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="6dp"
                         android:layout_marginTop="8dp"
                         android:max="100"
-                        android:progress="50"
+                        android:progress="0"
                         android:progressDrawable="@drawable/progress_bar_background"
                         android:progressTint="#FFFFFF" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Fat -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -221,20 +250,22 @@
                         android:textSize="16sp" />
 
                     <TextView
+                        android:id="@+id/tvFatValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="63%"
+                        android:text="0g"
                         android:textColor="#121212"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <ProgressBar
+                        android:id="@+id/pbFat"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:layout_width="match_parent"
                         android:layout_height="6dp"
                         android:layout_marginTop="8dp"
                         android:max="100"
-                        android:progress="63"
+                        android:progress="0"
                         android:progressDrawable="@drawable/progress_bar_background"
                         android:progressTint="#FFFFFF" />
                 </LinearLayout>
@@ -242,102 +273,44 @@
 
         </GridLayout>
 
-        <LinearLayout
-            android:id="@+id/ingredientList"
+        <!-- Description / Analysis Result -->
+        <TextView
+            android:id="@+id/tvDietDescription"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="24dp"
-            android:background="@drawable/rounded_dark_background"
-            android:orientation="vertical"
-            android:padding="16dp"
+            android:lineSpacingExtra="4dp"
+            android:text="Analysis result will appear here..."
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/nutritionGrid">
+            app:layout_constraintTop_toBottomOf="@id/nutritionGrid" />
+            
+        <!-- Loading ProgressBar -->
+        <ProgressBar
+            android:id="@+id/loading_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/foodImageCard" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Grilled Chicken Strips"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="220 kcal   Protein: 30g   Carbs: 0g   Fat: 5g"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="8dp"
-                android:background="#444444" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Naan Bread"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="260 kcal   Protein: 7g   Carbs: 45g   Fat: 6g"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="8dp"
-                android:background="#444444" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingVertical="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Sautéed Bell Peppers (Red &amp; Yellow)"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="50 kcal   Protein: 1g   Carbs: 12g   Fat: 0g"
-                    android:textColor="@android:color/darker_gray"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-        </LinearLayout>
-
+        <!-- Retry Button (Hidden by default) -->
+        <Button
+            android:id="@+id/btn_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Retry"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDietDescription" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/addToDietButton"
@@ -353,7 +326,7 @@
             app:cornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ingredientList" />
+            app:layout_constraintTop_toBottomOf="@id/tvDietDescription" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
