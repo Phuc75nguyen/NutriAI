@@ -54,67 +54,86 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <!-- Thanh chọn chức năng -->
-    <LinearLayout
+    <!-- Bottom Control Panel -->
+    <RelativeLayout
         android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
-        android:layout_height="175dp"
+        android:layout_height="120dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="0dp"
         android:background="#000000"
-        android:orientation="vertical">
+        android:padding="20dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingTop="20dp"
-            android:paddingBottom="10dp">
-
-            <Button
-                android:id="@+id/btn_ai_camera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/button_selected"
-                android:minWidth="0dp"
-                android:padding="15dp"
-                android:text="AI Camera"
-                android:textColor="@android:color/white" />
-
-            <Button
-                android:id="@+id/btn_ai_barcode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/button_unselected"
-                android:minWidth="0dp"
-                android:padding="15dp"
-                android:text="AI Barcode"
-                android:textColor="@android:color/white" />
-
-            <Button
-                android:id="@+id/btn_gallery"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/button_unselected"
-                android:minWidth="0dp"
-                android:padding="15dp"
-                android:text="Gallery"
-                android:textColor="@android:color/white" />
-        </LinearLayout>
-
-        <!-- Nút chụp -->
+        <!-- Capture Button (Center) -->
         <ImageButton
             android:id="@+id/btn_capture"
             android:layout_width="70dp"
             android:layout_height="70dp"
-            android:layout_gravity="center"
+            android:layout_centerInParent="true"
             android:background="@drawable/capture_button_bg"
             android:src="@drawable/ic_camera"
             app:tint="@android:color/white" />
 
-    </LinearLayout>
+        <!-- Gallery Button (Left side of Capture) -->
+        <ImageButton
+            android:id="@+id/btn_gallery"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_toStartOf="@id/btn_capture"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_gallery"
+            app:tint="@android:color/white" />
+
+    </RelativeLayout>
+
+    <!-- Preview Layout (Hidden by default) -->
+    <RelativeLayout
+        android:id="@+id/preview_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/iv_captured_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/preview_buttons_container"
+            android:scaleType="fitCenter" />
+
+        <LinearLayout
+            android:id="@+id/preview_buttons_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="#80000000"
+            android:orientation="horizontal"
+            android:padding="24dp"
+            android:weightSum="2">
+
+            <Button
+                android:id="@+id/btn_retake"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#FF5722"
+                android:text="Chụp lại"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btn_analyze"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:backgroundTint="#4CAF50"
+                android:text="Phân tích"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+    </RelativeLayout>
 
 </RelativeLayout>
