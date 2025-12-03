@@ -44,9 +44,6 @@ public class MainActivity extends AppCompatActivity {
                 } else if (itemId == R.id.nav_chat) { // ID khớp với menu XML của bạn
                     selectedFragment = new LucfinFragment();
 
-                } else if (itemId == R.id.nav_social) {
-                    selectedFragment = new DashboardFragment(); // Tạm dùng Dashboard
-
                 } else if (itemId == R.id.nav_scan) { // ID khớp với menu XML của bạn
                     // Mở màn hình Scan (Activity riêng)
                     Intent intent = new Intent(MainActivity.this, ScaningFoodActivity.class);
