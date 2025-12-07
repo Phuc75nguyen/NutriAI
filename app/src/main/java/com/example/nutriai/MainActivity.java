@@ -22,8 +22,24 @@ public class MainActivity extends AppCompatActivity {
         // 1. Ánh xạ
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // 2. Load màn hình Home mặc định
-        if (savedInstanceState == null) {
+        // --- FIX: Check Intent extras BEFORE loading default fragment ---
+        Intent intent = getIntent();
+        boolean isFromHistory = intent.getBooleanExtra("IS_HISTORY", false);
+
+        if (isFromHistory) {
+            // Open Chat fragment from history
+            long conversationId = intent.getLongExtra("CONVERSATION_ID", -1);
+            if (conversationId != -1) {
+                LucfinFragment chatFragment = new LucfinFragment();
+                Bundle args = new Bundle();
+                args.putLong("CONVERSATION_ID", conversationId);
+                chatFragment.setArguments(args);
+                
+                loadFragment(chatFragment);
+                bottomNavigationView.setSelectedItemId(R.id.nav_chat);
+            }
+        } else if (savedInstanceState == null) {
+            // 2. Load màn hình Home mặc định
             loadFragment(new DashboardFragment());
             bottomNavigationView.setSelectedItemId(R.id.nav_home);
         }
@@ -32,26 +48,19 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                // --- SỬA LỖI Ở ĐÂY: Khai báo là Fragment, KHÔNG ĐƯỢC KHAI BÁO LÀ LucfinFragment ---
                 Fragment selectedFragment = null;
-                // ----------------------------------------------------------------------------------
-
                 int itemId = item.getItemId();
 
                 if (itemId == R.id.nav_home) {
                     selectedFragment = new DashboardFragment();
-
-                } else if (itemId == R.id.nav_chat) { // ID khớp với menu XML của bạn
+                } else if (itemId == R.id.nav_chat) {
                     selectedFragment = new LucfinFragment();
-
-                } else if (itemId == R.id.nav_scan) { // ID khớp với menu XML của bạn
-                    // Mở màn hình Scan (Activity riêng)
-                    Intent intent = new Intent(MainActivity.this, ScaningFoodActivity.class);
-                    startActivity(intent);
-                    return false;
+                } else if (itemId == R.id.nav_scan) {
+                    Intent scanIntent = new Intent(MainActivity.this, ScaningFoodActivity.class);
+                    startActivity(scanIntent);
+                    return false; // Don't select the item, it's an activity
                 }
 
-                // Thay thế Fragment
                 if (selectedFragment != null) {
                     loadFragment(selectedFragment);
                     return true;
@@ -59,6 +68,27 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent); // Update intent in case MainActivity is singleTop
+
+        // Handle navigation if coming from history while activity is open
+        boolean isFromHistory = intent.getBooleanExtra("IS_HISTORY", false);
+        if (isFromHistory) {
+            long conversationId = intent.getLongExtra("CONVERSATION_ID", -1);
+            if (conversationId != -1) {
+                LucfinFragment chatFragment = new LucfinFragment();
+                Bundle args = new Bundle();
+                args.putLong("CONVERSATION_ID", conversationId);
+                chatFragment.setArguments(args);
+                
+                loadFragment(chatFragment);
+                bottomNavigationView.setSelectedItemId(R.id.nav_chat);
+            }
+        }
     }
 
     private void loadFragment(Fragment fragment) {

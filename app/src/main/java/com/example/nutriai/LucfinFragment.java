@@ -1,5 +1,6 @@
 package com.example.nutriai;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -17,6 +18,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.nutriai.api.ChatRequest;
 import com.example.nutriai.api.ChatResponse;
 import com.example.nutriai.api.RetrofitClient;
+import com.example.nutriai.database.AppDatabase;
+import com.example.nutriai.database.ChatMessage;
+import com.example.nutriai.database.Conversation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +38,10 @@ public class LucfinFragment extends Fragment {
     private EditText etInput;
     private ImageView btnSend;
 
+    // Database variables
+    private long currentConversationId = -1;
+    private AppDatabase db;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -44,10 +52,20 @@ public class LucfinFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Initialize DB
+        db = AppDatabase.getInstance(requireContext());
+
         // Initialize Views
         rcvChat = view.findViewById(R.id.rcv_chat);
         etInput = view.findViewById(R.id.et_input);
         btnSend = view.findViewById(R.id.btn_send);
+        ImageView btnHistory = view.findViewById(R.id.iv_chat_icon);
+
+        // Setup History Button
+        btnHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), ChatHistoryActivity.class);
+            startActivity(intent);
+        });
 
         // Setup Markwon
         Markwon markwon = Markwon.create(requireContext());
@@ -58,14 +76,60 @@ public class LucfinFragment extends Fragment {
         rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
         rcvChat.setAdapter(chatAdapter);
 
+        // --- FIX: Check for arguments from Bundle, not Activity Intent ---
+        if (getArguments() != null) {
+            long conversationId = getArguments().getLong("CONVERSATION_ID", -1);
+            if (conversationId != -1) {
+                currentConversationId = conversationId;
+                loadMessagesFromDb(currentConversationId);
+            }
+        }
+
         // Handle Send Button
         btnSend.setOnClickListener(v -> {
             String question = etInput.getText().toString().trim();
             if (!question.isEmpty()) {
-                sendMessage(question, true, null, null);
+                handleUserMessage(question);
                 etInput.setText("");
             }
         });
+    }
+
+    private void loadMessagesFromDb(long convId) {
+        List<ChatMessage> oldMessages = db.chatDao().getMessagesByConversation(convId);
+        messageList.clear();
+        for (ChatMessage oldMsg : oldMessages) {
+            messageList.add(new Message(oldMsg.content, oldMsg.isUser, null, null));
+        }
+        chatAdapter.notifyDataSetChanged();
+        if (!messageList.isEmpty()) {
+            rcvChat.scrollToPosition(messageList.size() - 1);
+        }
+    }
+
+    private void handleUserMessage(String content) {
+        // 1. Create conversation if new
+        if (currentConversationId == -1) {
+            Conversation newConv = new Conversation();
+            newConv.title = content; // Use first message as title
+            newConv.timestamp = System.currentTimeMillis();
+            newConv.lastMessage = content;
+            currentConversationId = db.chatDao().insertConversation(newConv);
+        } else {
+            // Update last message
+            db.chatDao().updateLastMessage(currentConversationId, content, System.currentTimeMillis());
+        }
+
+        // 2. Save User Message
+        ChatMessage userMsg = new ChatMessage();
+        userMsg.conversationId = currentConversationId;
+        userMsg.content = content;
+        userMsg.isUser = true;
+        userMsg.timestamp = System.currentTimeMillis();
+        db.chatDao().insertMessage(userMsg);
+
+        // 3. Update UI and Call API
+        sendMessage(content, true, null, null);
     }
 
     private void sendMessage(String content, boolean isUser, String imageUrl, String sources) {
@@ -91,6 +155,18 @@ public class LucfinFragment extends Fragment {
                     String sources = null;
                     if (sourceDocs != null && !sourceDocs.isEmpty()) {
                         sources = TextUtils.join(", ", sourceDocs);
+                    }
+
+                    // Save Bot Message to DB
+                    if (currentConversationId != -1) {
+                        ChatMessage botMsg = new ChatMessage();
+                        botMsg.conversationId = currentConversationId;
+                        botMsg.content = answer;
+                        botMsg.isUser = false;
+                        botMsg.timestamp = System.currentTimeMillis();
+                        db.chatDao().insertMessage(botMsg);
+                        
+                        db.chatDao().updateLastMessage(currentConversationId, answer, System.currentTimeMillis());
                     }
 
                     sendMessage(answer, false, image, sources);
