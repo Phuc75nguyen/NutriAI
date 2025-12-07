@@ -17,6 +17,9 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     private final OnItemClickListener listener;
     private final OnDeleteClickListener deleteListener;
 
+    public void updateData(List<Conversation> conversations) {
+    }
+
     public interface OnItemClickListener {
         void onItemClick(Conversation conversation);
     }

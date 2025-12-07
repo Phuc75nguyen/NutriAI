@@ -20,4 +20,6 @@ public class ChatMessage {
     public String content;
     public boolean isUser; // true: người dùng, false: bot
     public long timestamp;
+    public String imageUrl;
+    public String sources;
 }
