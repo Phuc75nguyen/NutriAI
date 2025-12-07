@@ -11,4 +11,6 @@ public class Conversation {
     public String title; // Ví dụ: "Give me random names..."
     public String lastMessage; // Để hiển thị preview
     public long timestamp; // Để sắp xếp mới nhất lên đầu
+    public String imageUrl; // Để hiển thị ảnh
+    public String sources; // Để hiển thị nguồn
 }

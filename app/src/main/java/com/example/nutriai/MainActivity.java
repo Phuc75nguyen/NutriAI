@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment; // Import quan trọng
+import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
@@ -13,38 +13,18 @@ import com.google.android.material.navigation.NavigationBarView;
 public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
+    private long pendingConversationId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Ánh xạ
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // --- FIX: Check Intent extras BEFORE loading default fragment ---
-        Intent intent = getIntent();
-        boolean isFromHistory = intent.getBooleanExtra("IS_HISTORY", false);
-
-        if (isFromHistory) {
-            // Open Chat fragment from history
-            long conversationId = intent.getLongExtra("CONVERSATION_ID", -1);
-            if (conversationId != -1) {
-                LucfinFragment chatFragment = new LucfinFragment();
-                Bundle args = new Bundle();
-                args.putLong("CONVERSATION_ID", conversationId);
-                chatFragment.setArguments(args);
-                
-                loadFragment(chatFragment);
-                bottomNavigationView.setSelectedItemId(R.id.nav_chat);
-            }
-        } else if (savedInstanceState == null) {
-            // 2. Load màn hình Home mặc định
-            loadFragment(new DashboardFragment());
-            bottomNavigationView.setSelectedItemId(R.id.nav_home);
-        }
-
         // 3. Xử lý sự kiện click
+        // Setup listener BEFORE setting selected item to ensure logic flows correctly if needed,
+        // though typically setSelectedItemId triggers the listener.
         bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -54,7 +34,15 @@ public class MainActivity extends AppCompatActivity {
                 if (itemId == R.id.nav_home) {
                     selectedFragment = new DashboardFragment();
                 } else if (itemId == R.id.nav_chat) {
-                    selectedFragment = new LucfinFragment();
+                    LucfinFragment chatFragment = new LucfinFragment();
+                    // Check logic for pending ID
+                    if (pendingConversationId != -1) {
+                        Bundle args = new Bundle();
+                        args.putLong("CONVERSATION_ID", pendingConversationId);
+                        chatFragment.setArguments(args);
+                        pendingConversationId = -1; // Reset immediately
+                    }
+                    selectedFragment = chatFragment;
                 } else if (itemId == R.id.nav_scan) {
                     Intent scanIntent = new Intent(MainActivity.this, ScaningFoodActivity.class);
                     startActivity(scanIntent);
@@ -68,26 +56,51 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+        handleIntent(getIntent());
+
+        if (savedInstanceState == null) {
+            if (pendingConversationId != -1) {
+                bottomNavigationView.setSelectedItemId(R.id.nav_chat);
+            } else {
+                bottomNavigationView.setSelectedItemId(R.id.nav_home);
+            }
+        }
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        setIntent(intent); // Update intent in case MainActivity is singleTop
+        setIntent(intent);
+        
+        handleIntent(intent);
 
-        // Handle navigation if coming from history while activity is open
-        boolean isFromHistory = intent.getBooleanExtra("IS_HISTORY", false);
-        if (isFromHistory) {
-            long conversationId = intent.getLongExtra("CONVERSATION_ID", -1);
-            if (conversationId != -1) {
+        if (pendingConversationId != -1) {
+            // Check if we are ALREADY on the chat tab
+            if (bottomNavigationView.getSelectedItemId() == R.id.nav_chat) {
+                // Case A: Already on Chat tab.
+                // setSelectedItemId won't trigger listener if item is already selected.
+                // Force reload manually.
                 LucfinFragment chatFragment = new LucfinFragment();
                 Bundle args = new Bundle();
-                args.putLong("CONVERSATION_ID", conversationId);
+                args.putLong("CONVERSATION_ID", pendingConversationId);
                 chatFragment.setArguments(args);
                 
                 loadFragment(chatFragment);
+                pendingConversationId = -1; // Reset immediately
+            } else {
+                // Case B: Switching from another tab.
+                // This will trigger onNavigationItemSelected, which handles the logic.
                 bottomNavigationView.setSelectedItemId(R.id.nav_chat);
             }
+        }
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("IS_HISTORY", false)) {
+            pendingConversationId = intent.getLongExtra("CONVERSATION_ID", -1);
+        } else {
+            pendingConversationId = -1;
         }
     }
 

@@ -99,7 +99,7 @@ public class LucfinFragment extends Fragment {
         List<ChatMessage> oldMessages = db.chatDao().getMessagesByConversation(convId);
         messageList.clear();
         for (ChatMessage oldMsg : oldMessages) {
-            messageList.add(new Message(oldMsg.content, oldMsg.isUser, null, null));
+            messageList.add(new Message(oldMsg.content, oldMsg.isUser, oldMsg.imageUrl, oldMsg.sources));
         }
         chatAdapter.notifyDataSetChanged();
         if (!messageList.isEmpty()) {
@@ -164,6 +164,8 @@ public class LucfinFragment extends Fragment {
                         botMsg.content = answer;
                         botMsg.isUser = false;
                         botMsg.timestamp = System.currentTimeMillis();
+                        botMsg.imageUrl = image; // Save image
+                        botMsg.sources = sources; // Save sources
                         db.chatDao().insertMessage(botMsg);
                         
                         db.chatDao().updateLastMessage(currentConversationId, answer, System.currentTimeMillis());

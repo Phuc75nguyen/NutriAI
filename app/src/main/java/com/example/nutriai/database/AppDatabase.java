@@ -5,7 +5,7 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {Conversation.class, ChatMessage.class}, version = 1)
+@Database(entities = {Conversation.class, ChatMessage.class}, version = 2)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract ChatDao chatDao();
 
@@ -15,7 +15,8 @@ public abstract class AppDatabase extends RoomDatabase {
         if (instance == null) {
             instance = Room.databaseBuilder(context.getApplicationContext(),
                     AppDatabase.class, "nutriai_chat_db")
-                    .allowMainThreadQueries() // Lưu ý: Thực tế nên chạy background thread, nhưng để demo đơn giản ta cho phép chạy main
+                    .allowMainThreadQueries() // Cho phép chạy trên main thread (để đơn giản hóa)
+                    .fallbackToDestructiveMigration() // Tự động xóa và tạo lại DB nếu schema thay đổi (Fix lỗi crash)
                     .build();
         }
         return instance;

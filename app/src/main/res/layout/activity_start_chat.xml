@@ -79,7 +79,6 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:background="@drawable/bg_input"
-            android:drawableEnd="@drawable/ic_mic"
             android:drawablePadding="10dp"
             android:hint="Generate a name of ...."
             android:padding="10dp"

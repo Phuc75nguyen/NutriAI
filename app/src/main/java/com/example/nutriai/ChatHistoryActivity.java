@@ -54,7 +54,8 @@ public class ChatHistoryActivity extends AppCompatActivity {
             adapter = new HistoryAdapter(conversations, this::openConversation, this::showDeleteConfirmationDialog);
             rcvHistory.setAdapter(adapter);
         } else {
-            adapter.notifyDataSetChanged(); // This is not the most efficient, but simple for now.
+            // Sử dụng phương thức updateData mới thay vì notifyDataSetChanged trực tiếp
+            adapter.updateData(conversations);
         }
     }
 
