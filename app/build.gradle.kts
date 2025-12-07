@@ -62,7 +62,8 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     // Markwon: Thư viện render Markdown siêu nhẹ cho Android
     implementation("io.noties.markwon:core:4.6.2")
-
-
-
+    
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
 }
