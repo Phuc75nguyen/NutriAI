@@ -50,6 +50,26 @@
 
     </LinearLayout>
 
+    <!-- Typing Indicator -->
+    <LinearLayout
+        android:id="@+id/layout_typing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#333333"
+        android:padding="12dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ProgressBar
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            style="?android:attr/progressBarStyleSmall"
+            android:indeterminateTint="#FFFFFF"/>
+    </LinearLayout>
+
     <!-- User Message -->
     <LinearLayout
         android:id="@+id/layout_user"

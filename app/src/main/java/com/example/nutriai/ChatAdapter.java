@@ -36,11 +36,18 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
         Message message = messageList.get(position);
-        if (message.isUser()) {
+
+        if (message.isTyping()) {
+            holder.layoutTyping.setVisibility(View.VISIBLE);
+            holder.layoutUser.setVisibility(View.GONE);
+            holder.layoutBot.setVisibility(View.GONE);
+        } else if (message.isUser()) {
+            holder.layoutTyping.setVisibility(View.GONE);
             holder.layoutUser.setVisibility(View.VISIBLE);
             holder.layoutBot.setVisibility(View.GONE);
             holder.tvUserMessage.setText(message.getContent());
         } else {
+            holder.layoutTyping.setVisibility(View.GONE);
             holder.layoutUser.setVisibility(View.GONE);
             holder.layoutBot.setVisibility(View.VISIBLE);
 
@@ -73,7 +80,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     }
 
     static class ChatViewHolder extends RecyclerView.ViewHolder {
-        LinearLayout layoutBot, layoutUser;
+        LinearLayout layoutBot, layoutUser, layoutTyping;
         TextView tvBotMessage, tvUserMessage, tvSources;
         ImageView ivBotImage;
 
@@ -81,6 +88,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
             super(itemView);
             layoutBot = itemView.findViewById(R.id.layout_bot);
             layoutUser = itemView.findViewById(R.id.layout_user);
+            layoutTyping = itemView.findViewById(R.id.layout_typing); // New typing layout
             tvBotMessage = itemView.findViewById(R.id.tv_bot_message);
             tvUserMessage = itemView.findViewById(R.id.tv_user_message);
             ivBotImage = itemView.findViewById(R.id.iv_bot_image);
