@@ -142,11 +142,33 @@ public class LucfinFragment extends Fragment {
         }
     }
 
+    private void showTyping() {
+        messageList.add(new Message(true)); // Add typing message
+        chatAdapter.notifyItemInserted(messageList.size() - 1);
+        rcvChat.scrollToPosition(messageList.size() - 1);
+    }
+
+    private void hideTyping() {
+        if (!messageList.isEmpty()) {
+            int lastIndex = messageList.size() - 1;
+            if (messageList.get(lastIndex).isTyping()) {
+                messageList.remove(lastIndex);
+                chatAdapter.notifyItemRemoved(lastIndex);
+            }
+        }
+    }
+
     private void callRealApi(String query) {
+        setInputEnabled(false);
+        showTyping(); // Show typing indicator
+        
         ChatRequest request = new ChatRequest(query);
         RetrofitClient.getApiService().chatWithLucfin(request).enqueue(new Callback<ChatResponse>() {
             @Override
             public void onResponse(Call<ChatResponse> call, Response<ChatResponse> response) {
+                setInputEnabled(true);
+                hideTyping(); // Hide typing indicator
+                
                 if (response.isSuccessful() && response.body() != null) {
                     String answer = response.body().getAnswer();
                     String image = response.body().getImage();
@@ -179,8 +201,21 @@ public class LucfinFragment extends Fragment {
 
             @Override
             public void onFailure(Call<ChatResponse> call, Throwable t) {
+                setInputEnabled(true);
+                hideTyping(); // Hide typing indicator
+                
                 sendMessage("Error: " + t.getMessage(), false, null, null);
             }
         });
+    }
+
+    private void setInputEnabled(boolean enabled) {
+        if (etInput != null) {
+            etInput.setEnabled(enabled);
+        }
+        if (btnSend != null) {
+            btnSend.setEnabled(enabled);
+            btnSend.setAlpha(enabled ? 1.0f : 0.5f);
+        }
     }
 }
