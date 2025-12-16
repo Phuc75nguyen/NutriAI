@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.nutriai.database.AppDatabase;
+import com.example.nutriai.database.FoodHistory;
 
 import java.io.File;
 
@@ -28,11 +30,17 @@ public class FoodResultActivity extends AppCompatActivity {
     private ProgressBar loadingProgress;
     private Button btnRetry;
     private String imagePath;
+    
+    // DB instance
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scaning_food_result);
+        
+        // Init DB
+        db = AppDatabase.getInstance(this);
 
         // Bind Views based on activity_scaning_food_result.xml structure
         ivFoodImage = findViewById(R.id.iv_food_image);
@@ -95,7 +103,8 @@ public class FoodResultActivity extends AppCompatActivity {
             loadingProgress.setVisibility(View.GONE);
             
             // 1. Set Food Name (Title)
-            tvDietTitle.setText("Phở Bò Tái Nạm");
+            String foodName = "Phở Bò Tái Nạm";
+            tvDietTitle.setText(foodName);
             tvDietTitle.setVisibility(View.VISIBLE);
             
             // 2. Set Description (Markdown)
@@ -125,7 +134,17 @@ public class FoodResultActivity extends AppCompatActivity {
             // Show Nutrition Grid
             nutritionGrid.setVisibility(View.VISIBLE);
 
+            // Save to DB
+            saveScanResult(foodName, "450g", mockDescription, imagePath);
+
         }, 2000); // 2 seconds delay
+    }
+
+    private void saveScanResult(String foodName, String foodWeight, String summary, String imagePath) {
+        // AppDatabase is configured with .allowMainThreadQueries(), so this is safe for now.
+        // In production, use Executor or Coroutines.
+        FoodHistory item = new FoodHistory(foodName, "Food Weight: " + foodWeight, summary, imagePath, System.currentTimeMillis());
+        db.foodDao().insert(item);
     }
     
     private void showError(String message) {

@@ -13,9 +13,9 @@ public class RetrofitClient {
         if (retrofit == null) {
             // 1. Tạo bộ cấu hình thời gian chờ (60 giây)
             OkHttpClient client = new OkHttpClient.Builder()
-                    .connectTimeout(60, TimeUnit.SECONDS) // Thời gian chờ kết nối
-                    .readTimeout(60, TimeUnit.SECONDS)    // Thời gian chờ server trả lời (Quan trọng nhất cho AI)
-                    .writeTimeout(60, TimeUnit.SECONDS)   // Thời gian chờ gửi dữ liệu
+                    .connectTimeout(180, TimeUnit.SECONDS) // Thời gian chờ kết nối
+                    .readTimeout(180, TimeUnit.SECONDS)    // Thời gian chờ server trả lời (Quan trọng nhất cho AI)
+                    .writeTimeout(180, TimeUnit.SECONDS)   // Thời gian chờ gửi dữ liệu
                     .build();
 
             // 2. Gắn vào Retrofit
