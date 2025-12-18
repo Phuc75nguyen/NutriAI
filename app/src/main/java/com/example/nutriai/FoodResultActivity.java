@@ -1,8 +1,6 @@
 package com.example.nutriai;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -13,13 +11,18 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.nutriai.api.ApiService;
 import com.example.nutriai.api.CVRetrofitClient;
+import com.example.nutriai.api.FoodAnalysisResponse;
 import com.example.nutriai.database.AppDatabase;
 import com.example.nutriai.database.FoodHistory;
+import com.example.nutriai.utils.FoodMapper;
 
 import java.io.File;
+import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-import io.noties.markwon.Markwon;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -29,133 +32,121 @@ import retrofit2.Response;
 
 public class FoodResultActivity extends AppCompatActivity {
 
-    private ImageView ivFoodImage;
-    private TextView tvDietTitle, tvDietDescription;
+    private ImageView ivResultImage;
+    private TextView tvFoodName, tvFoodWeight, tvSummaryContent;
     private TextView tvCalorieValue, tvProteinValue, tvCarbValue, tvFatValue;
-    private ProgressBar pbCalorie, pbProtein, pbCarb, pbFat;
-    private View nutritionGrid;
-    private ProgressBar loadingProgress;
-    private Button btnRetry;
-    private String imagePath;
+    private ProgressBar progressBar;
+    private Button btnSaveDiary;
 
-    // DB instance
     private AppDatabase db;
+    private String imagePath;
+    private FoodAnalysisResponse currentFoodResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scaning_food_result);
 
-        // Init DB
-        db = AppDatabase.getInstance(this);
+        db = AppDatabase.getInstance(getApplicationContext());
 
-        // Bind Views based on activity_scaning_food_result.xml structure
-        ivFoodImage = findViewById(R.id.iv_food_image);
-        tvDietTitle = findViewById(R.id.tvDietTitle);
-        tvDietDescription = findViewById(R.id.tvDietDescription);
-        loadingProgress = findViewById(R.id.loading_progress);
-        btnRetry = findViewById(R.id.btn_retry);
-        nutritionGrid = findViewById(R.id.nutritionGrid);
-
-        // Nutrition Cards Views
+        ivResultImage = findViewById(R.id.iv_result_image);
+        tvFoodName = findViewById(R.id.tv_food_name);
+        tvFoodWeight = findViewById(R.id.tv_food_weight);
         tvCalorieValue = findViewById(R.id.tvCalorieValue);
-        pbCalorie = findViewById(R.id.pbCalorie);
-
         tvProteinValue = findViewById(R.id.tvProteinValue);
-        pbProtein = findViewById(R.id.pbProtein);
-
         tvCarbValue = findViewById(R.id.tvCarbValue);
-        pbCarb = findViewById(R.id.pbCarb);
-
         tvFatValue = findViewById(R.id.tvFatValue);
-        pbFat = findViewById(R.id.pbFat);
-
-        ImageView backButton = findViewById(R.id.backButton);
-        backButton.setOnClickListener(v -> finish());
+        tvSummaryContent = findViewById(R.id.tv_summary_content);
+        btnSaveDiary = findViewById(R.id.btn_save_diary);
+        progressBar = findViewById(R.id.progress_bar);
 
         imagePath = getIntent().getStringExtra("image_path");
 
         if (imagePath != null) {
             File imageFile = new File(imagePath);
             if (imageFile.exists()) {
-                Glide.with(this)
-                        .load(imageFile)
-                        .into(ivFoodImage);
-                analyzeImage(imageFile);
+                Glide.with(this).load(imageFile).into(ivResultImage);
+                analyzeImage(imagePath);
             } else {
-                showError("Image file not found");
+                Toast.makeText(this, "Image file not found", Toast.LENGTH_SHORT).show();
+                finish();
             }
         } else {
-            showError("No image path provided");
+            Toast.makeText(this, "No image path provided", Toast.LENGTH_SHORT).show();
+            finish();
         }
+    }
 
-        btnRetry.setOnClickListener(v -> {
-            if (imagePath != null) {
-                File imageFile = new File(imagePath);
-                if(imageFile.exists()) {
-                    analyzeImage(imageFile);
+    private void analyzeImage(String imagePath) {
+        progressBar.setVisibility(View.VISIBLE);
+
+        File file = new File(imagePath);
+        RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
+        MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
+
+        ApiService apiService = CVRetrofitClient.getApiService();
+        Call<FoodAnalysisResponse> call = apiService.analyzeImage(body);
+
+        call.enqueue(new Callback<FoodAnalysisResponse>() {
+            @Override
+            public void onResponse(Call<FoodAnalysisResponse> call, Response<FoodAnalysisResponse> response) {
+                progressBar.setVisibility(View.GONE);
+                if (response.isSuccessful() && response.body() != null) {
+                    currentFoodResponse = response.body();
+                    updateUi(currentFoodResponse);
+                } else {
+                    Toast.makeText(FoodResultActivity.this, "Analysis failed: " + response.message(), Toast.LENGTH_SHORT).show();
+                    finish();
                 }
+            }
+
+            @Override
+            public void onFailure(Call<FoodAnalysisResponse> call, Throwable t) {
+                progressBar.setVisibility(View.GONE);
+                Toast.makeText(FoodResultActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                finish();
             }
         });
     }
 
-    private void analyzeImage(File imageFile) {
-        // Show loading state
-        loadingProgress.setVisibility(View.VISIBLE);
-        
-        // Hide result views initially
-        tvDietTitle.setVisibility(View.GONE);
-        tvDietDescription.setVisibility(View.GONE);
-        nutritionGrid.setVisibility(View.GONE);
-        btnRetry.setVisibility(View.GONE);
+    private void updateUi(FoodAnalysisResponse response) {
+        String displayName = FoodMapper.getDisplayName(response.getFoodName());
+        tvFoodName.setText(displayName);
+        tvFoodWeight.setText(response.getFoodWeight());
 
-        // TODO: Implement actual API call using CVRetrofitClient and a real FoodResponse object
-        // For now, we continue with the simulation
-        simulateAnalysis();
+        tvCalorieValue.setText(String.format(Locale.getDefault(), "%.0f kcal", response.getCalories()));
+        tvProteinValue.setText(String.format(Locale.getDefault(), "%.1fg", response.getProtein()));
+        tvCarbValue.setText(String.format(Locale.getDefault(), "%.1fg", response.getCarbs()));
+        tvFatValue.setText(String.format(Locale.getDefault(), "%.1fg", response.getFat()));
+        tvSummaryContent.setText(response.getSummary());
+
+        btnSaveDiary.setOnClickListener(v -> saveToDiary());
     }
 
-    private void simulateAnalysis() {
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            loadingProgress.setVisibility(View.GONE);
-            
-            // 1. Set Food Name (Title)
-            String foodName = "Phở Bò Tái Nạm";
-            tvDietTitle.setText(foodName);
-            tvDietTitle.setVisibility(View.VISIBLE);
-            
-            // 2. Set Description (Markdown)
-            String mockDescription = "**Phân tích:** Món ăn này là Phở Bò, một món ăn truyền thống của Việt Nam, giàu protein từ thịt bò và năng lượng từ bánh phở.\n\n" +
-                    "**Gợi ý:** Ăn kèm nhiều rau sống để bổ sung chất xơ và vitamin. Hạn chế uống hết nước dùng nếu bạn đang kiểm soát lượng muối nạp vào.";
-            final Markwon markwon = Markwon.create(FoodResultActivity.this);
-            markwon.setMarkdown(tvDietDescription, mockDescription);
-            tvDietDescription.setVisibility(View.VISIBLE);
-            
-            // 3. Set Macro Values
-            tvCalorieValue.setText("450 kcal");
-            pbCalorie.setProgress(45);
-            tvProteinValue.setText("25g");
-            pbProtein.setProgress(60);
-            tvCarbValue.setText("60g");
-            pbCarb.setProgress(50);
-            tvFatValue.setText("12g");
-            pbFat.setProgress(30);
-            nutritionGrid.setVisibility(View.VISIBLE);
+    private void saveToDiary() {
+        if (currentFoodResponse != null) {
+            String displayName = FoodMapper.getDisplayName(currentFoodResponse.getFoodName());
 
-            // Save to DB
-            saveScanResult(foodName, "450g", mockDescription, imagePath);
+            FoodHistory foodHistory = new FoodHistory(
+                    displayName,
+                    currentFoodResponse.getFoodWeight(),
+                    currentFoodResponse.getSummary(),
+                    imagePath,
+                    System.currentTimeMillis(),
+                    currentFoodResponse.getCalories(),
+                    currentFoodResponse.getProtein(),
+                    currentFoodResponse.getCarbs(),
+                    currentFoodResponse.getFat()
+            );
 
-        }, 2000); // 2 seconds delay
-    }
-
-    private void saveScanResult(String foodName, String foodWeight, String summary, String imagePath) {
-        FoodHistory item = new FoodHistory(foodName, "Food Weight: " + foodWeight, summary, imagePath, System.currentTimeMillis());
-        db.foodDao().insert(item);
-    }
-    
-    private void showError(String message) {
-        loadingProgress.setVisibility(View.GONE);
-        tvDietDescription.setText(message);
-        tvDietDescription.setVisibility(View.VISIBLE);
-        btnRetry.setVisibility(View.VISIBLE);
+            Executor executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                db.foodDao().insert(foodHistory);
+                runOnUiThread(() -> {
+                    Toast.makeText(FoodResultActivity.this, "Saved to diary", Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+            });
+        }
     }
 }

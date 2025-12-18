@@ -34,6 +34,7 @@ android {
 dependencies {
 
     implementation(libs.appcompat)
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.navigation.fragment)
