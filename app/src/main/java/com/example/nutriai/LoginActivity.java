@@ -17,14 +17,14 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername;
     private MaterialButton btnLogin;
-    private AppDatabase db;
+//    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        db = AppDatabase.getInstance(this);
+//        db = AppDatabase.getInstance(this);
 
         // Bind to new views
         etUsername = findViewById(R.id.et_email); // ID from new layout
@@ -47,7 +47,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         // Insert/Update user in DB
-        db.userDao().insert(userToLogin);
+//        db.userDao().insert(userToLogin);
 
         // Save to SharedPreferences
         SharedPreferences prefs = getSharedPreferences("NutriPrefs", MODE_PRIVATE);

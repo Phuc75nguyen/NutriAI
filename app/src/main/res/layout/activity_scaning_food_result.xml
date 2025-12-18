@@ -1,93 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#121212"
-    android:scrollbars="none"
     tools:context=".FoodResultActivity">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="24dp">
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/backButton"
-            android:layout_width="wrap_content"
+        <TextView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:contentDescription="Back"
-            android:padding="8dp"
-            android:src="@drawable/ic_arrow_back"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@android:color/white" />
-
-        <ImageView
-            android:id="@+id/favoriteButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            android:contentDescription="Favorite"
-            android:padding="8dp"
-            android:src="@drawable/ic_favorite_border"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@android:color/white" />
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:text="Analysis Result"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/foodImageCard"
-            android:layout_width="0dp"
-            android:layout_height="220dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/backButton">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            app:cardCornerRadius="24dp">
 
             <ImageView
-                android:id="@+id/iv_food_image"
+                android:id="@+id/iv_result_image"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="250dp"
                 android:scaleType="centerCrop"
-                android:src="@drawable/placeholder_food_dish"
                 tools:src="@tools:sample/backgrounds/scenic" />
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Diet Title (Food Name) -->
         <TextView
-            android:id="@+id/tvDietTitle"
-            android:layout_width="0dp"
+            android:id="@+id/tv_food_name"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginHorizontal="16dp"
-            android:text="Food Name"
+            android:gravity="center"
             android:textColor="@android:color/white"
-            android:textSize="24sp"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/foodImageCard" />
+            tools:text="Food Name" />
 
-        <!-- Nutrition Grid -->
-        <GridLayout
-            android:id="@+id/nutritionGrid"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tv_food_weight"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            android:columnCount="2"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDietTitle">
+            android:gravity="center"
+            android:textColor="@android:color/darker_gray"
+            android:textSize="16sp"
+            tools:text="100g" />
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:columnCount="2">
 
             <!-- Calories -->
             <com.google.android.material.card.MaterialCardView
@@ -97,8 +69,7 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginBottom="16dp"
                 app:cardBackgroundColor="#C8B6F6"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardCornerRadius="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -117,21 +88,10 @@
                         android:id="@+id/tvCalorieValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0 kcal"
                         android:textColor="#121212"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <ProgressBar
-                        android:id="@+id/pbCalorie"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="8dp"
-                        android:max="100"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/progress_bar_background"
-                        android:progressTint="#FFFFFF" />
+                        android:textStyle="bold"
+                        tools:text="250 kcal" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -143,8 +103,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginBottom="16dp"
                 app:cardBackgroundColor="#59D68A"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardCornerRadius="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -163,21 +122,10 @@
                         android:id="@+id/tvProteinValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0g"
                         android:textColor="#121212"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <ProgressBar
-                        android:id="@+id/pbProtein"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="8dp"
-                        android:max="100"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/progress_bar_background"
-                        android:progressTint="#FFFFFF" />
+                        android:textStyle="bold"
+                        tools:text="20g" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -188,8 +136,7 @@
                 android:layout_columnWeight="1"
                 android:layout_marginEnd="8dp"
                 app:cardBackgroundColor="#F5E663"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardCornerRadius="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -208,21 +155,10 @@
                         android:id="@+id/tvCarbValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0g"
                         android:textColor="#121212"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <ProgressBar
-                        android:id="@+id/pbCarb"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="8dp"
-                        android:max="100"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/progress_bar_background"
-                        android:progressTint="#FFFFFF" />
+                        android:textStyle="bold"
+                        tools:text="30g" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -233,8 +169,7 @@
                 android:layout_columnWeight="1"
                 android:layout_marginStart="8dp"
                 app:cardBackgroundColor="#FF7043"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+                app:cardCornerRadius="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -253,80 +188,62 @@
                         android:id="@+id/tvFatValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="0g"
                         android:textColor="#121212"
                         android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <ProgressBar
-                        android:id="@+id/pbFat"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="6dp"
-                        android:layout_marginTop="8dp"
-                        android:max="100"
-                        android:progress="0"
-                        android:progressDrawable="@drawable/progress_bar_background"
-                        android:progressTint="#FFFFFF" />
+                        android:textStyle="bold"
+                        tools:text="15g" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
         </GridLayout>
 
-        <!-- Description / Analysis Result -->
-        <TextView
-            android:id="@+id/tvDietDescription"
-            android:layout_width="0dp"
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            android:lineSpacingExtra="4dp"
-            android:text="Analysis result will appear here..."
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/nutritionGrid" />
-            
-        <!-- Loading ProgressBar -->
-        <ProgressBar
-            android:id="@+id/loading_progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/foodImageCard" />
+            android:layout_margin="16dp"
+            app:cardBackgroundColor="#E0C3FC"
+            app:cardCornerRadius="20dp">
 
-        <!-- Retry Button (Hidden by default) -->
-        <Button
-            android:id="@+id/btn_retry"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Retry"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDietDescription" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lucfin Summary:"
+                    android:textColor="@android:color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_summary_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    tools:text="This is a summary of the food analysis." />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/addToDietButton"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="#FF7043"
-            android:text="Add to My Diet"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            app:cornerRadius="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDietDescription" />
+            android:id="@+id/btn_save_diary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="24dp"
+            android:padding="16dp"
+            android:text="Add to Diary"
+            app:backgroundTint="#FF7043"
+            app:cornerRadius="16dp" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</ScrollView>
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="visible" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -8,10 +8,11 @@ import retrofit2.http.POST;
 import retrofit2.http.Part;
 
 public interface ApiService {
+
     @POST("ask")
     Call<ChatResponse> chatWithLucfin(@Body ChatRequest request);
 
     @Multipart
-    @POST("analyze-image") // Make sure this matches the Colab endpoint
-    Call<ChatMessageResponse> analyzeImage(@Part MultipartBody.Part image);
+    @POST("analyze") // Endpoint for image analysis
+    Call<FoodAnalysisResponse> analyzeImage(@Part MultipartBody.Part image);
 }
