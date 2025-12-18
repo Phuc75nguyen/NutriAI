@@ -1,5 +1,8 @@
 package com.example.nutriai;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,7 +61,7 @@ public class DashboardFragment extends Fragment {
 
         // Setup Click Listeners
         btnAvatar.setOnClickListener(v -> Toast.makeText(getContext(), "Avatar Clicked", Toast.LENGTH_SHORT).show());
-        btnSettings.setOnClickListener(v -> Toast.makeText(getContext(), "Settings Clicked", Toast.LENGTH_SHORT).show());
+        btnSettings.setOnClickListener(v -> handleLogout());
         
         // Initial load
         loadHistoryData();
@@ -83,5 +86,19 @@ public class DashboardFragment extends Fragment {
         if (adapter != null) {
             adapter.setData(historyList);
         }
+    }
+
+    private void handleLogout() {
+        // Clear SharedPreferences
+        SharedPreferences prefs = requireContext().getSharedPreferences("NutriPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove("CURRENT_USER_ID");
+        editor.apply();
+
+        // Navigate to LoginActivity
+        Intent intent = new Intent(getActivity(), LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        getActivity().finish();
     }
 }

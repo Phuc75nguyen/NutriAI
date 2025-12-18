@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.nutriai.api.ChatRequest;
 import com.example.nutriai.api.ChatResponse;
-import com.example.nutriai.api.RetrofitClient;
+import com.example.nutriai.api.ChatRetrofitClient;
 import com.example.nutriai.database.AppDatabase;
 import com.example.nutriai.database.ChatMessage;
 import com.example.nutriai.database.Conversation;
@@ -163,7 +163,7 @@ public class LucfinFragment extends Fragment {
         showTyping(); // Show typing indicator
         
         ChatRequest request = new ChatRequest(query);
-        RetrofitClient.getApiService().chatWithLucfin(request).enqueue(new Callback<ChatResponse>() {
+        ChatRetrofitClient.getApiService().chatWithLucfin(request).enqueue(new Callback<ChatResponse>() {
             @Override
             public void onResponse(Call<ChatResponse> call, Response<ChatResponse> response) {
                 setInputEnabled(true);

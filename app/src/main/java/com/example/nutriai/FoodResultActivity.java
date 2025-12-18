@@ -13,12 +13,19 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+import com.example.nutriai.api.CVRetrofitClient;
 import com.example.nutriai.database.AppDatabase;
 import com.example.nutriai.database.FoodHistory;
 
 import java.io.File;
 
 import io.noties.markwon.Markwon;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class FoodResultActivity extends AppCompatActivity {
 
@@ -30,7 +37,7 @@ public class FoodResultActivity extends AppCompatActivity {
     private ProgressBar loadingProgress;
     private Button btnRetry;
     private String imagePath;
-    
+
     // DB instance
     private AppDatabase db;
 
@@ -38,7 +45,7 @@ public class FoodResultActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scaning_food_result);
-        
+
         // Init DB
         db = AppDatabase.getInstance(this);
 
@@ -53,16 +60,16 @@ public class FoodResultActivity extends AppCompatActivity {
         // Nutrition Cards Views
         tvCalorieValue = findViewById(R.id.tvCalorieValue);
         pbCalorie = findViewById(R.id.pbCalorie);
-        
+
         tvProteinValue = findViewById(R.id.tvProteinValue);
         pbProtein = findViewById(R.id.pbProtein);
-        
+
         tvCarbValue = findViewById(R.id.tvCarbValue);
         pbCarb = findViewById(R.id.pbCarb);
-        
+
         tvFatValue = findViewById(R.id.tvFatValue);
         pbFat = findViewById(R.id.pbFat);
-        
+
         ImageView backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(v -> finish());
 
@@ -74,22 +81,25 @@ public class FoodResultActivity extends AppCompatActivity {
                 Glide.with(this)
                         .load(imageFile)
                         .into(ivFoodImage);
-                simulateAnalysis();
+                analyzeImage(imageFile);
             } else {
-                Toast.makeText(this, "Image file not found", Toast.LENGTH_SHORT).show();
+                showError("Image file not found");
             }
         } else {
-            Toast.makeText(this, "No image path provided", Toast.LENGTH_SHORT).show();
+            showError("No image path provided");
         }
-        
+
         btnRetry.setOnClickListener(v -> {
             if (imagePath != null) {
-                simulateAnalysis();
+                File imageFile = new File(imagePath);
+                if(imageFile.exists()) {
+                    analyzeImage(imageFile);
+                }
             }
         });
     }
 
-    private void simulateAnalysis() {
+    private void analyzeImage(File imageFile) {
         // Show loading state
         loadingProgress.setVisibility(View.VISIBLE);
         
@@ -99,6 +109,12 @@ public class FoodResultActivity extends AppCompatActivity {
         nutritionGrid.setVisibility(View.GONE);
         btnRetry.setVisibility(View.GONE);
 
+        // TODO: Implement actual API call using CVRetrofitClient and a real FoodResponse object
+        // For now, we continue with the simulation
+        simulateAnalysis();
+    }
+
+    private void simulateAnalysis() {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             loadingProgress.setVisibility(View.GONE);
             
@@ -115,23 +131,14 @@ public class FoodResultActivity extends AppCompatActivity {
             tvDietDescription.setVisibility(View.VISIBLE);
             
             // 3. Set Macro Values
-            // Calories
             tvCalorieValue.setText("450 kcal");
-            pbCalorie.setProgress(45); // Mock percentage
-            
-            // Protein
+            pbCalorie.setProgress(45);
             tvProteinValue.setText("25g");
             pbProtein.setProgress(60);
-            
-            // Carbs
             tvCarbValue.setText("60g");
             pbCarb.setProgress(50);
-            
-            // Fat
             tvFatValue.setText("12g");
             pbFat.setProgress(30);
-            
-            // Show Nutrition Grid
             nutritionGrid.setVisibility(View.VISIBLE);
 
             // Save to DB
@@ -141,14 +148,12 @@ public class FoodResultActivity extends AppCompatActivity {
     }
 
     private void saveScanResult(String foodName, String foodWeight, String summary, String imagePath) {
-        // AppDatabase is configured with .allowMainThreadQueries(), so this is safe for now.
-        // In production, use Executor or Coroutines.
         FoodHistory item = new FoodHistory(foodName, "Food Weight: " + foodWeight, summary, imagePath, System.currentTimeMillis());
         db.foodDao().insert(item);
     }
     
     private void showError(String message) {
-        // Use description text view to show error
+        loadingProgress.setVisibility(View.GONE);
         tvDietDescription.setText(message);
         tvDietDescription.setVisibility(View.VISIBLE);
         btnRetry.setVisibility(View.VISIBLE);
