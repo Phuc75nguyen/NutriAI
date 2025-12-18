@@ -5,10 +5,11 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {Conversation.class, ChatMessage.class, FoodHistory.class}, version = 3)
+@Database(entities = {Conversation.class, ChatMessage.class, FoodHistory.class, User.class}, version = 4)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract ChatDao chatDao();
     public abstract FoodDao foodDao();
+    public abstract UserDao userDao();
 
     private static AppDatabase instance;
 
