@@ -21,6 +21,7 @@ import com.example.nutriai.api.ChatRetrofitClient;
 import com.example.nutriai.database.AppDatabase;
 import com.example.nutriai.database.ChatMessage;
 import com.example.nutriai.database.Conversation;
+import com.example.nutriai.database.FoodHistory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +77,6 @@ public class LucfinFragment extends Fragment {
         rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
         rcvChat.setAdapter(chatAdapter);
 
-        // --- FIX: Check for arguments from Bundle, not Activity Intent ---
         if (getArguments() != null) {
             long conversationId = getArguments().getLong("CONVERSATION_ID", -1);
             if (conversationId != -1) {
@@ -85,11 +85,42 @@ public class LucfinFragment extends Fragment {
             }
         }
 
-        // Handle Send Button
+        // --- XỬ LÝ NÚT GỬI (LOGIC MỚI: ẨN CONTEXT) ---
         btnSend.setOnClickListener(v -> {
             String question = etInput.getText().toString().trim();
-            if (!question.isEmpty()) {
-                handleUserMessage(question);
+            if (question.isEmpty()) return;
+
+            String lowerMsg = question.toLowerCase();
+            boolean isAskingHistory = lowerMsg.contains("vừa ăn") ||
+                    lowerMsg.contains("hôm nay ăn") ||
+                    lowerMsg.contains("nãy ăn") ||
+                    lowerMsg.contains("ăn gì");
+
+            if (isAskingHistory) {
+                new Thread(() -> {
+                    FoodHistory latestFood = db.foodDao().getLatestFood();
+                    String apiPayload = question; // Mặc định gửi câu hỏi gốc
+
+                    if (latestFood != null) {
+                        // Tạo context để gửi Server (User KHÔNG nhìn thấy cái này)
+                        String contextInfo = "\n\n(System Context: Người dùng vừa ăn món: " + latestFood.getFoodName()
+                                + ". Tổng calo: " + (int)latestFood.getCalories() + " kcal"
+                                + ". Protein: " + latestFood.getProtein() + "g"
+                                + ". Hãy trả lời câu hỏi dựa trên thông tin này.)";
+
+                        apiPayload = question + contextInfo;
+                    }
+
+                    String finalApiPayload = apiPayload;
+                    requireActivity().runOnUiThread(() -> {
+                        // Gọi hàm đặc biệt: Hiển thị 1 đằng, Gửi 1 nẻo
+                        handleUserMessage(question, finalApiPayload);
+                        etInput.setText("");
+                    });
+                }).start();
+            } else {
+                // Chat bình thường: Hiển thị và Gửi giống nhau
+                handleUserMessage(question, question);
                 etInput.setText("");
             }
         });
@@ -107,43 +138,42 @@ public class LucfinFragment extends Fragment {
         }
     }
 
-    private void handleUserMessage(String content) {
-        // 1. Create conversation if new
+    // --- HÀM XỬ LÝ TIN NHẮN USER (QUAN TRỌNG: Tách biệt nội dung hiển thị & gửi đi) ---
+    private void handleUserMessage(String displayContent, String apiContent) {
+        // 1. Lưu vào DB & Hiển thị (Dùng displayContent - NGẮN GỌN, SẠCH SẼ)
         if (currentConversationId == -1) {
             Conversation newConv = new Conversation();
-            newConv.title = content; // Use first message as title
+            newConv.title = displayContent;
             newConv.timestamp = System.currentTimeMillis();
-            newConv.lastMessage = content;
+            newConv.lastMessage = displayContent;
             currentConversationId = db.chatDao().insertConversation(newConv);
         } else {
-            // Update last message
-            db.chatDao().updateLastMessage(currentConversationId, content, System.currentTimeMillis());
+            db.chatDao().updateLastMessage(currentConversationId, displayContent, System.currentTimeMillis());
         }
 
-        // 2. Save User Message
         ChatMessage userMsg = new ChatMessage();
         userMsg.conversationId = currentConversationId;
-        userMsg.content = content;
+        userMsg.content = displayContent; // Lưu câu hỏi ngắn vào DB
         userMsg.isUser = true;
         userMsg.timestamp = System.currentTimeMillis();
         db.chatDao().insertMessage(userMsg);
 
-        // 3. Update UI and Call API
-        sendMessage(content, true, null, null);
+        // Cập nhật UI (User chỉ thấy câu hỏi ngắn)
+        sendMessage(displayContent, true, null, null);
+
+        // 2. Gửi API (Dùng apiContent - CÓ KÈM CONTEXT)
+        callRealApi(apiContent);
     }
 
+    // Hàm cập nhật giao diện (Đã xóa bỏ việc gọi API ở đây để tránh lặp)
     private void sendMessage(String content, boolean isUser, String imageUrl, String sources) {
         messageList.add(new Message(content, isUser, imageUrl, sources));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
         rcvChat.scrollToPosition(messageList.size() - 1);
-
-        if (isUser) {
-            callRealApi(content);
-        }
     }
 
     private void showTyping() {
-        messageList.add(new Message(true)); // Add typing message
+        messageList.add(new Message(true));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
         rcvChat.scrollToPosition(messageList.size() - 1);
     }
@@ -160,36 +190,35 @@ public class LucfinFragment extends Fragment {
 
     private void callRealApi(String query) {
         setInputEnabled(false);
-        showTyping(); // Show typing indicator
-        
+        showTyping();
+
         ChatRequest request = new ChatRequest(query);
         ChatRetrofitClient.getApiService().chatWithLucfin(request).enqueue(new Callback<ChatResponse>() {
             @Override
             public void onResponse(Call<ChatResponse> call, Response<ChatResponse> response) {
                 setInputEnabled(true);
-                hideTyping(); // Hide typing indicator
-                
+                hideTyping();
+
                 if (response.isSuccessful() && response.body() != null) {
                     String answer = response.body().getAnswer();
                     String image = response.body().getImage();
                     List<String> sourceDocs = response.body().getSourceDocuments();
-                    
+
                     String sources = null;
                     if (sourceDocs != null && !sourceDocs.isEmpty()) {
                         sources = TextUtils.join(", ", sourceDocs);
                     }
 
-                    // Save Bot Message to DB
                     if (currentConversationId != -1) {
                         ChatMessage botMsg = new ChatMessage();
                         botMsg.conversationId = currentConversationId;
                         botMsg.content = answer;
                         botMsg.isUser = false;
                         botMsg.timestamp = System.currentTimeMillis();
-                        botMsg.imageUrl = image; // Save image
-                        botMsg.sources = sources; // Save sources
+                        botMsg.imageUrl = image;
+                        botMsg.sources = sources;
                         db.chatDao().insertMessage(botMsg);
-                        
+
                         db.chatDao().updateLastMessage(currentConversationId, answer, System.currentTimeMillis());
                     }
 
@@ -202,17 +231,14 @@ public class LucfinFragment extends Fragment {
             @Override
             public void onFailure(Call<ChatResponse> call, Throwable t) {
                 setInputEnabled(true);
-                hideTyping(); // Hide typing indicator
-                
+                hideTyping();
                 sendMessage("Error: " + t.getMessage(), false, null, null);
             }
         });
     }
 
     private void setInputEnabled(boolean enabled) {
-        if (etInput != null) {
-            etInput.setEnabled(enabled);
-        }
+        if (etInput != null) etInput.setEnabled(enabled);
         if (btnSend != null) {
             btnSend.setEnabled(enabled);
             btnSend.setAlpha(enabled ? 1.0f : 0.5f);

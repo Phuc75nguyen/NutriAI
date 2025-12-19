@@ -24,8 +24,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import okhttp3.MediaType;
@@ -148,41 +150,88 @@ public class FoodResultActivity extends AppCompatActivity {
         }
 
         double totalCal = 0, totalPro = 0, totalCarb = 0, totalFat = 0;
-        List<String> foodNames = new ArrayList<>();
-        StringBuilder summaryBuilder = new StringBuilder("Bữa ăn gồm: ");
-
-        // Duyệt qua tất cả các món phát hiện được
+        
+        // 1. Đếm số lượng box của từng món
+        // Ví dụ: {"Sườn Cốt lết": 2, "Sườn non": 5, "Đậu hũ": 4}
+        Map<String, Integer> foodCounts = new HashMap<>();
         for (FoodAnalysisResponse.Detection detection : detections) {
             FoodHistory item = NutritionLookup.getNutritionInfo(detection.getClass_name());
-
-            totalCal += item.getCalories();
-            totalPro += item.getProtein();
-            totalCarb += item.getCarbs();
-            totalFat += item.getFat();
-            foodNames.add(item.getFoodName());
-            summaryBuilder.append(item.getFoodName()).append(", ");
+            String name = item.getFoodName();
+            foodCounts.put(name, foodCounts.getOrDefault(name, 0) + 1);
         }
 
-        // Tạo đối tượng tổng hợp
-        String finalName = String.join(" + ", foodNames); // Ví dụ: Sườn nướng + Đậu hũ
-        if (finalName.length() > 30) finalName = "Bữa ăn tổng hợp (" + foodNames.size() + " món)";
+        List<String> displayNames = new ArrayList<>();
+        StringBuilder summaryBuilder = new StringBuilder("Bữa ăn gồm: ");
 
-        // Xóa dấu phẩy cuối
+        // 2. Tính toán dinh dưỡng & Hiển thị
+        for (Map.Entry<String, Integer> entry : foodCounts.entrySet()) {
+            String foodName = entry.getKey(); // Tên tiếng Việt: "Sườn Cốt lết", "Sườn non"...
+            int count = entry.getValue();     // Số lượng box
+
+            // Lấy thông tin 1 phần chuẩn
+            FoodHistory standardItem = NutritionLookup.getNutritionInfoByVietnameseName(foodName);
+
+            // --- LOGIC XỬ LÝ SỐ LƯỢNG (QUAN TRỌNG) ---
+            double multiplier = getNutritionMultiplier(foodName, count);
+            // ------------------------------------------
+
+            totalCal += standardItem.getCalories() * multiplier;
+            totalPro += standardItem.getProtein() * multiplier;
+            totalCarb += standardItem.getCarbs() * multiplier;
+            totalFat += standardItem.getFat() * multiplier;
+
+            // Xử lý hiển thị tên:
+            // - Nếu là Cốt lết (ăn theo miếng) -> Hiện số lượng (vd: "2x Sườn Cốt lết")
+            // - Nếu là Sườn non/Đậu hũ (gom nhóm) -> Chỉ hiện tên (vd: "Sườn non", "Đậu hũ")
+            String displayStr;
+            if (multiplier > 1.0) {
+                displayStr = (int)multiplier + "x " + foodName; 
+            } else {
+                displayStr = foodName;
+            }
+
+            displayNames.add(displayStr);
+            summaryBuilder.append(displayStr).append(", ");
+        }
+
+        // Tạo chuỗi tổng hợp
+        String finalName = String.join(" và ", displayNames);
+        if (finalName.length() > 40) finalName = "Combo " + displayNames.size() + " món";
+
         if (summaryBuilder.length() > 2) summaryBuilder.setLength(summaryBuilder.length() - 2);
-
-        // --- 3. TẠO SUMMARY TỰ ĐỘNG ĐỂ LUCFIN CÓ CÁI MÀ ĐỌC ---
-        String autoSummary = summaryBuilder.toString() + ". Tổng năng lượng: " + (int)totalCal + " kcal. Hãy hỏi tôi nếu cần lời khuyên chi tiết!";
+        String autoSummary = summaryBuilder.toString() + ". Tổng năng lượng: " + (int)totalCal + " kcal.";
 
         currentFoodHistory = new FoodHistory(
                 finalName,
-                foodNames.size() + " món",
-                autoSummary, // Lưu summary này vào DB
-                "", // ImagePath sẽ cập nhật lúc save
+                "1 phần", 
+                autoSummary,
+                "", 
                 System.currentTimeMillis(),
                 totalCal, totalPro, totalCarb, totalFat
         );
 
         updateUi(currentFoodHistory);
+    }
+
+    // --- HÀM LOGIC QUY ĐỔI SỐ LƯỢNG ---
+    private double getNutritionMultiplier(String foodName, int boxCount) {
+        
+        // 1. Sườn Cốt lết: 1 Box = 1 Miếng (Món chính)
+        if (foodName.equals("Sườn Cốt lết")) {
+            return (double) boxCount; 
+        }
+
+        // 2. Sườn non: N Box = 1 Phần (Do bị cắt nhỏ)
+        if (foodName.equals("Sườn non")) {
+            return 1.0;
+        }
+
+        // 3. Các món phụ (Đậu hũ, Chả, Rau...): N Box = 1 Phần
+        // (Trừ khi quá nhiều > 10 miếng mới tính gấp đôi)
+        //if (boxCount > 10) {
+           // return 2.0;
+        //}
+        return 1.0; // Mặc định gom nhóm hết
     }
 
     private void updateUi(FoodHistory food) {
