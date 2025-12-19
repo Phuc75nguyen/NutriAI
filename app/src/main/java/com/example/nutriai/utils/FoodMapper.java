@@ -9,11 +9,12 @@ public class FoodMapper {
     static {
         // Populate the map with your known food labels and their display names
         foodNameMap.put("suon_non", "Sườn non nướng");
-        foodNameMap.put("tofu_trang", "Tofu trắng");
-        foodNameMap.put("banh_mi", "Bánh Mì");
-        foodNameMap.put("bun_cha", "Bún Chả");
-        foodNameMap.put("com_tam", "Cơm Tấm");
-        foodNameMap.put("pho", "Phở");
+        foodNameMap.put("suon_cot_let", "Cốt lết nướng");
+        foodNameMap.put("tofu_trang", "Đậu hủ trắng");
+        foodNameMap.put("tofu_chien", "Đậu hủ chiên");
+        foodNameMap.put("cha_cat-lát", "Chả cá cắ lát");
+        foodNameMap.put("cha_mieng", "Chả cá viên");
+
         // Add all your other food items here
     }
 

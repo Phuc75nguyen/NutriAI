@@ -1,14 +1,10 @@
 package com.example.nutriai;
 
 import android.Manifest;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -33,9 +29,7 @@ import com.bumptech.glide.Glide;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutionException;
@@ -55,36 +49,22 @@ public class ScaningFoodActivity extends AppCompatActivity {
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
     private ExecutorService ioExecutor;
+    private ProcessCameraProvider cameraProvider;
     private File currentPhotoFile;
 
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     private final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
 
-    // Xử lý khi chọn ảnh từ Gallery
     private final ActivityResultLauncher<String> galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    Log.d(TAG, "Gallery URI selected: " + uri);
-                    Toast.makeText(this, "Processing image...", Toast.LENGTH_SHORT).show();
                     ioExecutor.execute(() -> {
-                        try {
-                            File file = getFileFromUri(uri);
-                            if (file != null && file.exists()) {
-                                Log.d(TAG, "File created from URI: " + file.getAbsolutePath());
-                                // Chuyển sang màn hình Result ngay lập tức
-                                runOnUiThread(() -> navigateToResult(file));
-                            } else {
-                                Log.e(TAG, "Failed to create file from URI");
-                                runOnUiThread(() -> Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show());
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error in gallery processing", e);
-                            runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        File file = getFileFromUri(uri);
+                        if (file != null && file.exists()) {
+                            runOnUiThread(() -> navigateToResult(file));
                         }
                     });
-                } else {
-                    Log.d(TAG, "Gallery URI is null (user cancelled)");
                 }
             }
     );
@@ -94,12 +74,10 @@ public class ScaningFoodActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scaning_food);
 
-        // Ánh xạ View
         cameraPreview = findViewById(R.id.camera_preview);
         btnCapture = findViewById(R.id.btn_capture);
         btnClose = findViewById(R.id.btn_close);
         btnGallery = findViewById(R.id.btn_gallery);
-
         previewLayout = findViewById(R.id.preview_layout);
         ivCapturedPreview = findViewById(R.id.iv_captured_preview);
         btnRetake = findViewById(R.id.btn_retake);
@@ -108,36 +86,51 @@ public class ScaningFoodActivity extends AppCompatActivity {
         cameraExecutor = Executors.newSingleThreadExecutor();
         ioExecutor = Executors.newSingleThreadExecutor();
 
-        // Kiểm tra quyền Camera
+        // Set up the button listeners
+        btnCapture.setOnClickListener(v -> takePhoto());
+        btnGallery.setOnClickListener(v -> galleryLauncher.launch("image/*"));
+        btnClose.setOnClickListener(v -> finish());
+        btnRetake.setOnClickListener(v -> {
+            previewLayout.setVisibility(View.GONE);
+            // It's good practice to restart the camera preview if the user retakes
+            startCamera();
+        });
+        btnAnalyze.setOnClickListener(v -> {
+            if (currentPhotoFile != null && currentPhotoFile.exists()) {
+                navigateToResult(currentPhotoFile);
+            } else {
+                Toast.makeText(this, "Image file not found.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Hide the preview overlay and start the camera on resume
+        previewLayout.setVisibility(View.GONE);
         if (allPermissionsGranted()) {
             startCamera();
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
+    }
 
-        // Sự kiện các nút bấm
-        btnCapture.setOnClickListener(v -> takePhoto());
-        btnGallery.setOnClickListener(v -> {
-            Log.d(TAG, "Launching gallery picker");
-            galleryLauncher.launch("image/*");
-        });
-        btnClose.setOnClickListener(v -> finish());
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Unbind the camera when the activity is paused to release resources
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+    }
 
-        btnRetake.setOnClickListener(v -> previewLayout.setVisibility(View.GONE));
-
-        // --- ĐÃ SỬA LẠI ĐOẠN NÀY CHO ĐÚNG CÚ PHÁP ---
-        btnAnalyze.setOnClickListener(v -> {
-            if (currentPhotoFile != null && currentPhotoFile.exists()) {
-                Log.d(TAG, "Analyzing captured photo: " + currentPhotoFile.getAbsolutePath());
-
-                // Bỏ qua việc lưu gallery và gọi thread để test nhanh UI
-                navigateToResult(currentPhotoFile);
-
-            } else {
-                Toast.makeText(this, "Image not found", Toast.LENGTH_SHORT).show();
-            }
-        });
-        // ---------------------------------------------
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Shut down executors
+        cameraExecutor.shutdown();
+        ioExecutor.shutdown();
     }
 
     private void startCamera() {
@@ -146,14 +139,16 @@ public class ScaningFoodActivity extends AppCompatActivity {
 
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider = cameraProviderFuture.get();
                 Preview preview = new Preview.Builder().build();
-                imageCapture = new ImageCapture.Builder().build();
+                imageCapture = new ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                        .build();
 
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
                 preview.setSurfaceProvider(cameraPreview.getSurfaceProvider());
 
-                cameraProvider.unbindAll();
+                cameraProvider.unbindAll(); // Unbind first to be safe
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
 
             } catch (ExecutionException | InterruptedException e) {
@@ -165,6 +160,11 @@ public class ScaningFoodActivity extends AppCompatActivity {
     private void takePhoto() {
         if (imageCapture == null) return;
 
+        // Unbind camera before taking picture to prevent preview from freezing
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+
         File photoFile = new File(getCacheDir(), "food_capture_" + System.currentTimeMillis() + ".jpg");
         ImageCapture.OutputFileOptions outputOptions =
                 new ImageCapture.OutputFileOptions.Builder(photoFile).build();
@@ -175,15 +175,16 @@ public class ScaningFoodActivity extends AppCompatActivity {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        Log.d(TAG, "Photo captured: " + photoFile.getAbsolutePath());
                         currentPhotoFile = photoFile;
                         showPreview(photoFile);
                     }
 
                     @Override
                     public void onError(@NonNull ImageCaptureException exception) {
-                        Log.e(TAG, "Photo capture failed: " + exception.getMessage());
-                        Toast.makeText(ScaningFoodActivity.this, "Capture failed", Toast.LENGTH_SHORT).show();
+                        Log.e(TAG, "Photo capture failed: " + exception.getMessage(), exception);
+                        Toast.makeText(ScaningFoodActivity.this, "Capture failed. Please try again.", Toast.LENGTH_SHORT).show();
+                        // Restart camera on failure
+                        startCamera();
                     }
                 }
         );
@@ -195,51 +196,15 @@ public class ScaningFoodActivity extends AppCompatActivity {
     }
 
     private void navigateToResult(File file) {
-        Log.d(TAG, "Navigating to result with file: " + file.getAbsolutePath());
         Intent intent = new Intent(ScaningFoodActivity.this, FoodResultActivity.class);
         intent.putExtra("image_path", file.getAbsolutePath());
         startActivity(intent);
     }
 
-    // Hàm này hiện tại chưa dùng trong luồng Mock, nhưng giữ lại để sau này dùng
-    private void saveToGallery(File file) {
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "Food_Capture_" + System.currentTimeMillis());
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/NutriAI");
-            values.put(MediaStore.Images.Media.IS_PENDING, 1);
-        }
-
-        Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        if (uri != null) {
-            try (OutputStream outputStream = getContentResolver().openOutputStream(uri);
-                 InputStream inputStream = new FileInputStream(file)) {
-                if (outputStream != null) {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, bytesRead);
-                    }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    values.clear();
-                    values.put(MediaStore.Images.Media.IS_PENDING, 0);
-                    getContentResolver().update(uri, values, null, null);
-                }
-                runOnUiThread(() -> Toast.makeText(this, "Saved to Gallery", Toast.LENGTH_SHORT).show());
-            } catch (IOException e) {
-                Log.e(TAG, "Error saving to gallery", e);
-            }
-        }
-    }
-
     private File getFileFromUri(Uri uri) {
-        File file = null;
         try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
             if (inputStream == null) return null;
-
-            file = new File(getCacheDir(), "temp_image_" + System.currentTimeMillis() + ".jpg");
+            File file = new File(getCacheDir(), "temp_image_" + System.currentTimeMillis() + ".jpg");
             try (OutputStream outputStream = new FileOutputStream(file)) {
                 byte[] buffer = new byte[4096];
                 int bytesRead;
@@ -268,19 +233,11 @@ public class ScaningFoodActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera();
-            } else {
-                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+            if (!allPermissionsGranted()) {
+                Toast.makeText(this, "Camera permission is required to use this feature.", Toast.LENGTH_LONG).show();
                 finish();
             }
+            // If permissions are granted, onResume will be called, which starts the camera.
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        cameraExecutor.shutdown();
-        ioExecutor.shutdown();
     }
 }

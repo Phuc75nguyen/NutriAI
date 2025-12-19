@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class CVRetrofitClient {
     private static Retrofit retrofit = null;
-    private static final String BASE_URL = "https://1a2b-34-45-67-89.ngrok.io/"; // Placeholder: REPLACE WITH YOUR COLAB NGROK URL
+    private static final String BASE_URL = "https://unchamfered-unlanterned-ignacia.ngrok-free.dev/"; // Placeholder: REPLACE WITH YOUR COLAB NGROK URL
 
     public static ApiService getApiService() {
         if (retrofit == null) {
