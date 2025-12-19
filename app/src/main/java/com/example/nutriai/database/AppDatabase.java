@@ -5,9 +5,9 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-// 1. TĂNG VERSION LÊN 5 (Hoặc số nào lớn hơn số hiện tại)
+// 1. TĂNG VERSION LÊN 6 (Hoặc số nào lớn hơn số hiện tại)
 // 2. Thêm exportSchema = false để đỡ bị warning
-@Database(entities = {Conversation.class, ChatMessage.class, FoodHistory.class, User.class}, version = 5, exportSchema = false)
+@Database(entities = {Conversation.class, ChatMessage.class, FoodHistory.class, User.class}, version = 6, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     public abstract ChatDao chatDao();
     public abstract FoodDao foodDao();

@@ -43,15 +43,15 @@ public class FoodHistoryAdapter extends RecyclerView.Adapter<FoodHistoryAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         FoodHistory item = list.get(position);
 
-        holder.tvFoodName.setText(item.foodName);
-        holder.tvFoodWeight.setText(item.foodWeight);
-        holder.tvSummaryContent.setText(item.summary);
+        holder.tvFoodName.setText(item.getFoodName());
+        holder.tvFoodWeight.setText(item.getFoodWeight());
+        holder.tvSummaryContent.setText(item.getSummary());
 
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm - dd/MM/yyyy", Locale.getDefault());
-        holder.tvTimestamp.setText(sdf.format(new Date(item.timestamp)));
+        holder.tvTimestamp.setText(sdf.format(new Date(item.getTimestamp())));
 
-        if (item.imagePath != null) {
-            File imgFile = new File(item.imagePath);
+        if (item.getImagePath() != null) {
+            File imgFile = new File(item.getImagePath());
             if (imgFile.exists()) {
                 Glide.with(holder.itemView.getContext())
                         .load(imgFile)

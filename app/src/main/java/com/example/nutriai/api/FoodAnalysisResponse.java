@@ -1,45 +1,47 @@
 package com.example.nutriai.api;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
 public class FoodAnalysisResponse {
 
-    @SerializedName("food_name")
-    private String foodName;
+    @SerializedName("status")
+    private String status;
 
-    @SerializedName("food_weight")
-    private String foodWeight;
+    @SerializedName("detections")
+    private List<Detection> detections;
 
-    @SerializedName("calories")
-    private double calories;
+    @SerializedName("image_base64")
+    private String image_base64;
 
-    @SerializedName("protein")
-    private double protein;
+    public String getStatus() {
+        return status;
+    }
 
-    @SerializedName("carbs")
-    private double carbs;
+    public List<Detection> getDetections() {
+        return detections;
+    }
 
-    @SerializedName("fat")
-    private double fat;
+    public String getImage_base64() {
+        return image_base64;
+    }
 
-    @SerializedName("summary")
-    private String summary;
+    public static class Detection {
+        @SerializedName("class_id")
+        private int class_id;
 
-    // Getters
-    public String getFoodName() { return foodName; }
-    public String getFoodWeight() { return foodWeight; }
-    public double getCalories() { return calories; }
-    public double getProtein() { return protein; }
-    public double getCarbs() { return carbs; }
-    public double getFat() { return fat; }
-    public String getSummary() { return summary; }
+        @SerializedName("class_name")
+        private String class_name;
 
-    // Setters
-    public void setFoodName(String foodName) { this.foodName = foodName; }
-    public void setFoodWeight(String foodWeight) { this.foodWeight = foodWeight; }
-    public void setCalories(double calories) { this.calories = calories; }
-    public void setProtein(double protein) { this.protein = protein; }
-    public void setCarbs(double carbs) { this.carbs = carbs; }
-    public void setFat(double fat) { this.fat = fat; }
-    public void setSummary(String summary) { this.summary = summary; }
+        @SerializedName("confidence")
+        private double confidence;
+
+        @SerializedName("bbox")
+        private List<Double> bbox;
+
+        public int getClass_id() { return class_id; }
+        public String getClass_name() { return class_name; }
+        public double getConfidence() { return confidence; }
+        public List<Double> getBbox() { return bbox; }
+    }
 }

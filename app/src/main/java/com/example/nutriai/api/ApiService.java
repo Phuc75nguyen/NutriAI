@@ -12,7 +12,11 @@ public interface ApiService {
     @POST("ask")
     Call<ChatResponse> chatWithLucfin(@Body ChatRequest request);
 
+    //@Multipart
+    //@POST("analyze") // Endpoint for image analysis
+    //Call<FoodAnalysisResponse> analyzeImage(@Part MultipartBody.Part image);
+
     @Multipart
-    @POST("analyze") // Endpoint for image analysis
-    Call<FoodAnalysisResponse> analyzeImage(@Part MultipartBody.Part image);
+    @POST("predict") // Khớp với chữ "predict" trong link Postman
+    Call<FoodAnalysisResponse> analyzeImage(@Part MultipartBody.Part file);
 }
