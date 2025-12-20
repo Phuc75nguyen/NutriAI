@@ -15,11 +15,15 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.nutriai.api.ApiService;
 import com.example.nutriai.api.CVRetrofitClient;
+import com.example.nutriai.api.ChatRetrofitClient; // [MỚI] Import client chat
 import com.example.nutriai.api.FoodAnalysisResponse;
+import com.example.nutriai.api.ScanRequest; // [MỚI] Import model request
 import com.example.nutriai.database.AppDatabase;
 import com.example.nutriai.database.FoodHistory;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -128,7 +133,7 @@ public class FoodResultActivity extends AppCompatActivity {
                         } catch (Exception e) {}
                     }
 
-                    // --- 2. XỬ LÝ CỘNG DỒN DINH DƯỠNG (FIX LỖI CHỈ HIỆN 1 MÓN) ---
+                    // --- 2. XỬ LÝ CỘNG DỒN DINH DƯỠNG ---
                     processMultipleFoods(res.getDetections());
 
                 } else {
@@ -150,9 +155,8 @@ public class FoodResultActivity extends AppCompatActivity {
         }
 
         double totalCal = 0, totalPro = 0, totalCarb = 0, totalFat = 0;
-        
+
         // 1. Đếm số lượng box của từng món
-        // Ví dụ: {"Sườn Cốt lết": 2, "Sườn non": 5, "Đậu hũ": 4}
         Map<String, Integer> foodCounts = new HashMap<>();
         for (FoodAnalysisResponse.Detection detection : detections) {
             FoodHistory item = NutritionLookup.getNutritionInfo(detection.getClass_name());
@@ -165,27 +169,20 @@ public class FoodResultActivity extends AppCompatActivity {
 
         // 2. Tính toán dinh dưỡng & Hiển thị
         for (Map.Entry<String, Integer> entry : foodCounts.entrySet()) {
-            String foodName = entry.getKey(); // Tên tiếng Việt: "Sườn Cốt lết", "Sườn non"...
-            int count = entry.getValue();     // Số lượng box
+            String foodName = entry.getKey();
+            int count = entry.getValue();
 
-            // Lấy thông tin 1 phần chuẩn
             FoodHistory standardItem = NutritionLookup.getNutritionInfoByVietnameseName(foodName);
-
-            // --- LOGIC XỬ LÝ SỐ LƯỢNG (QUAN TRỌNG) ---
             double multiplier = getNutritionMultiplier(foodName, count);
-            // ------------------------------------------
 
             totalCal += standardItem.getCalories() * multiplier;
             totalPro += standardItem.getProtein() * multiplier;
             totalCarb += standardItem.getCarbs() * multiplier;
             totalFat += standardItem.getFat() * multiplier;
 
-            // Xử lý hiển thị tên:
-            // - Nếu là Cốt lết (ăn theo miếng) -> Hiện số lượng (vd: "2x Sườn Cốt lết")
-            // - Nếu là Sườn non/Đậu hũ (gom nhóm) -> Chỉ hiện tên (vd: "Sườn non", "Đậu hũ")
             String displayStr;
             if (multiplier > 1.0) {
-                displayStr = (int)multiplier + "x " + foodName; 
+                displayStr = (int)multiplier + "x " + foodName;
             } else {
                 displayStr = foodName;
             }
@@ -194,7 +191,6 @@ public class FoodResultActivity extends AppCompatActivity {
             summaryBuilder.append(displayStr).append(", ");
         }
 
-        // Tạo chuỗi tổng hợp
         String finalName = String.join(" và ", displayNames);
         if (finalName.length() > 40) finalName = "Combo " + displayNames.size() + " món";
 
@@ -203,35 +199,51 @@ public class FoodResultActivity extends AppCompatActivity {
 
         currentFoodHistory = new FoodHistory(
                 finalName,
-                "1 phần", 
+                "1 phần",
                 autoSummary,
-                "", 
+                "",
                 System.currentTimeMillis(),
                 totalCal, totalPro, totalCarb, totalFat
         );
 
         updateUi(currentFoodHistory);
+
+        // =================================================================
+        // [QUAN TRỌNG] BƯỚC 3: GỌI API ĐỒNG BỘ MÓN ĂN LÊN CHATBOT SERVER
+        // =================================================================
+
+        // Lấy danh sách tên món ăn đã detect (để gửi lên server)
+        List<String> detectedFoods = new ArrayList<>(foodCounts.keySet());
+
+        // Tạo Request (dùng ScanRequest đã tạo ở Bước 1)
+        ScanRequest request = new ScanRequest("default_user", detectedFoods);
+
+        // Gọi API bất đồng bộ (Background Thread)
+        ChatRetrofitClient.getApiService().syncScanData(request).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Log.d("Lucfin", "✅ Đã đồng bộ món ăn lên Server (Session: default_user)!");
+                } else {
+                    Log.e("Lucfin", "⚠️ Server từ chối: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e("Lucfin", "❌ Lỗi mạng: " + t.getMessage());
+            }
+        });
     }
 
-    // --- HÀM LOGIC QUY ĐỔI SỐ LƯỢNG ---
     private double getNutritionMultiplier(String foodName, int boxCount) {
-        
-        // 1. Sườn Cốt lết: 1 Box = 1 Miếng (Món chính)
         if (foodName.equals("Sườn Cốt lết")) {
-            return (double) boxCount; 
+            return (double) boxCount;
         }
-
-        // 2. Sườn non: N Box = 1 Phần (Do bị cắt nhỏ)
         if (foodName.equals("Sườn non")) {
             return 1.0;
         }
-
-        // 3. Các món phụ (Đậu hũ, Chả, Rau...): N Box = 1 Phần
-        // (Trừ khi quá nhiều > 10 miếng mới tính gấp đôi)
-        //if (boxCount > 10) {
-           // return 2.0;
-        //}
-        return 1.0; // Mặc định gom nhóm hết
+        return 1.0;
     }
 
     private void updateUi(FoodHistory food) {
@@ -242,7 +254,6 @@ public class FoodResultActivity extends AppCompatActivity {
         tvCarbValue.setText(String.format(Locale.US, "%.1fg", food.getCarbs()));
         tvFatValue.setText(String.format(Locale.US, "%.1fg", food.getFat()));
 
-        // Hiển thị Summary ngay lập tức
         tvSummaryContent.setText(food.getSummary());
 
         btnSaveDiary.setOnClickListener(v -> saveToDiary());
@@ -250,13 +261,11 @@ public class FoodResultActivity extends AppCompatActivity {
 
     private void saveToDiary() {
         if (currentFoodHistory != null) {
-            // --- 4. FIX LỖI ẢNH DASHBOARD MẤT KHUNG ---
-            // Thay vì lưu ảnh gốc, ta lưu ảnh đang hiển thị trên màn hình (đã có khung)
             String savedPath = saveResultImageToFile();
             if (savedPath != null) {
                 currentFoodHistory.setImagePath(savedPath);
             } else {
-                currentFoodHistory.setImagePath(originalImagePath); // Fallback nếu lỗi
+                currentFoodHistory.setImagePath(originalImagePath);
             }
 
             currentFoodHistory.setTimestamp(System.currentTimeMillis());
@@ -272,12 +281,10 @@ public class FoodResultActivity extends AppCompatActivity {
         }
     }
 
-    // Hàm lưu ảnh từ ImageView ra file riêng
     private String saveResultImageToFile() {
         try {
             if (ivResultImage.getDrawable() == null) return null;
 
-            // Lấy Bitmap từ ImageView (Ảnh có vẽ khung từ Server)
             Bitmap bitmap = ((BitmapDrawable) ivResultImage.getDrawable()).getBitmap();
 
             File resultFile = new File(getFilesDir(), "bbox_" + System.currentTimeMillis() + ".jpg");

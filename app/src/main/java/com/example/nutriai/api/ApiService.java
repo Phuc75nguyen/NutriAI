@@ -9,14 +9,16 @@ import retrofit2.http.Part;
 
 public interface ApiService {
 
+    // API Chat
     @POST("ask")
     Call<ChatResponse> chatWithLucfin(@Body ChatRequest request);
 
-    //@Multipart
-    //@POST("analyze") // Endpoint for image analysis
-    //Call<FoodAnalysisResponse> analyzeImage(@Part MultipartBody.Part image);
-
+    // API Computer Vision
     @Multipart
-    @POST("predict") // Khớp với chữ "predict" trong link Postman
+    @POST("predict")
     Call<FoodAnalysisResponse> analyzeImage(@Part MultipartBody.Part file);
+
+    // API Đồng bộ (Server Python yêu cầu endpoint là "scan")
+    @POST("scan")
+    Call<Void> syncScanData(@Body ScanRequest request);
 }
