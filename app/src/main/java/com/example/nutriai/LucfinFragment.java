@@ -85,44 +85,15 @@ public class LucfinFragment extends Fragment {
             }
         }
 
-        // --- XỬ LÝ NÚT GỬI (LOGIC MỚI: ẨN CONTEXT) ---
+        // --- XỬ LÝ NÚT GỬI ---
         btnSend.setOnClickListener(v -> {
             String question = etInput.getText().toString().trim();
             if (question.isEmpty()) return;
 
-            String lowerMsg = question.toLowerCase();
-            boolean isAskingHistory = lowerMsg.contains("vừa ăn") ||
-                    lowerMsg.contains("hôm nay ăn") ||
-                    lowerMsg.contains("nãy ăn") ||
-                    lowerMsg.contains("ăn gì");
+            // Hiển thị và Gửi đi giống hệt nhau (Server tự xử lý context)
+            handleUserMessage(question, question);
 
-            if (isAskingHistory) {
-                new Thread(() -> {
-                    FoodHistory latestFood = db.foodDao().getLatestFood();
-                    String apiPayload = question; // Mặc định gửi câu hỏi gốc
-
-                    if (latestFood != null) {
-                        // Tạo context để gửi Server (User KHÔNG nhìn thấy cái này)
-                        String contextInfo = "\n\n(System Context: Người dùng vừa ăn món: " + latestFood.getFoodName()
-                                + ". Tổng calo: " + (int)latestFood.getCalories() + " kcal"
-                                + ". Protein: " + latestFood.getProtein() + "g"
-                                + ". Hãy trả lời câu hỏi dựa trên thông tin này.)";
-
-                        apiPayload = question + contextInfo;
-                    }
-
-                    String finalApiPayload = apiPayload;
-                    requireActivity().runOnUiThread(() -> {
-                        // Gọi hàm đặc biệt: Hiển thị 1 đằng, Gửi 1 nẻo
-                        handleUserMessage(question, finalApiPayload);
-                        etInput.setText("");
-                    });
-                }).start();
-            } else {
-                // Chat bình thường: Hiển thị và Gửi giống nhau
-                handleUserMessage(question, question);
-                etInput.setText("");
-            }
+            etInput.setText("");
         });
     }
 
@@ -138,9 +109,9 @@ public class LucfinFragment extends Fragment {
         }
     }
 
-    // --- HÀM XỬ LÝ TIN NHẮN USER (QUAN TRỌNG: Tách biệt nội dung hiển thị & gửi đi) ---
+    // --- HÀM XỬ LÝ TIN NHẮN USER ---
     private void handleUserMessage(String displayContent, String apiContent) {
-        // 1. Lưu vào DB & Hiển thị (Dùng displayContent - NGẮN GỌN, SẠCH SẼ)
+        // 1. Lưu vào DB & Hiển thị
         if (currentConversationId == -1) {
             Conversation newConv = new Conversation();
             newConv.title = displayContent;
@@ -153,19 +124,18 @@ public class LucfinFragment extends Fragment {
 
         ChatMessage userMsg = new ChatMessage();
         userMsg.conversationId = currentConversationId;
-        userMsg.content = displayContent; // Lưu câu hỏi ngắn vào DB
+        userMsg.content = displayContent;
         userMsg.isUser = true;
         userMsg.timestamp = System.currentTimeMillis();
         db.chatDao().insertMessage(userMsg);
 
-        // Cập nhật UI (User chỉ thấy câu hỏi ngắn)
+        // Cập nhật UI
         sendMessage(displayContent, true, null, null);
 
-        // 2. Gửi API (Dùng apiContent - CÓ KÈM CONTEXT)
+        // 2. Gửi API
         callRealApi(apiContent);
     }
 
-    // Hàm cập nhật giao diện (Đã xóa bỏ việc gọi API ở đây để tránh lặp)
     private void sendMessage(String content, boolean isUser, String imageUrl, String sources) {
         messageList.add(new Message(content, isUser, imageUrl, sources));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
@@ -188,6 +158,7 @@ public class LucfinFragment extends Fragment {
         }
     }
 
+    // --- LOGIC GỌI API & TRÁO ẢNH THÔNG MINH ---
     private void callRealApi(String query) {
         setInputEnabled(false);
         showTyping();
@@ -201,28 +172,45 @@ public class LucfinFragment extends Fragment {
 
                 if (response.isSuccessful() && response.body() != null) {
                     String answer = response.body().getAnswer();
-                    String image = response.body().getImage();
+                    String serverImage = response.body().getImage();
                     List<String> sourceDocs = response.body().getSourceDocuments();
 
-                    String sources = null;
+                    // --- SỬA LỖI FINAL VARIABLE TẠI ĐÂY ---
+                    // Dùng biến tạm để tính toán, sau đó gán vào biến final
+                    String tempSources = null;
                     if (sourceDocs != null && !sourceDocs.isEmpty()) {
-                        sources = TextUtils.join(", ", sourceDocs);
+                        tempSources = TextUtils.join(", ", sourceDocs);
+                    }
+                    final String sources = tempSources; // Biến này là FINAL, dùng được trong Thread
+
+                    // --- BẮT ĐẦU LOGIC TRÁO ẢNH (SMART SWAP) ---
+                    if ("USE_LOCAL_IMAGE".equals(serverImage)) {
+                        // CASE 1: Server ra lệnh dùng ảnh gốc trên máy
+                        new Thread(() -> {
+                            FoodHistory latest = db.foodDao().getLatestFood();
+                            String localImagePath = null;
+
+                            // Kiểm tra hợp lệ: Có ảnh & Mới chụp trong vòng 10 phút
+                            if (latest != null && latest.getImagePath() != null) {
+                                long timeDiff = System.currentTimeMillis() - latest.getTimestamp();
+                                if (timeDiff < 10 * 60 * 1000) { // 10 phút
+                                    localImagePath = latest.getImagePath();
+                                }
+                            }
+
+                            // Quay về UI Thread để hiển thị
+                            String finalImg = localImagePath;
+                            // Ở đây dùng 'sources' (là biến final ở trên) sẽ không bị lỗi nữa
+                            requireActivity().runOnUiThread(() -> {
+                                saveAndDisplayMessage(answer, finalImg, sources);
+                            });
+                        }).start();
+
+                    } else {
+                        // CASE 2: Server gửi link ảnh thường
+                        saveAndDisplayMessage(answer, serverImage, sources);
                     }
 
-                    if (currentConversationId != -1) {
-                        ChatMessage botMsg = new ChatMessage();
-                        botMsg.conversationId = currentConversationId;
-                        botMsg.content = answer;
-                        botMsg.isUser = false;
-                        botMsg.timestamp = System.currentTimeMillis();
-                        botMsg.imageUrl = image;
-                        botMsg.sources = sources;
-                        db.chatDao().insertMessage(botMsg);
-
-                        db.chatDao().updateLastMessage(currentConversationId, answer, System.currentTimeMillis());
-                    }
-
-                    sendMessage(answer, false, image, sources);
                 } else {
                     sendMessage("Error: " + response.code(), false, null, null);
                 }
@@ -235,6 +223,26 @@ public class LucfinFragment extends Fragment {
                 sendMessage("Error: " + t.getMessage(), false, null, null);
             }
         });
+    }
+
+    // --- HÀM HELPER: LƯU DB VÀ HIỂN THỊ ---
+    private void saveAndDisplayMessage(String answer, String imageUrl, String sources) {
+        if (currentConversationId != -1) {
+            new Thread(() -> {
+                ChatMessage botMsg = new ChatMessage();
+                botMsg.conversationId = currentConversationId;
+                botMsg.content = answer;
+                botMsg.isUser = false;
+                botMsg.timestamp = System.currentTimeMillis();
+                botMsg.imageUrl = imageUrl;
+                botMsg.sources = sources;
+                db.chatDao().insertMessage(botMsg);
+
+                db.chatDao().updateLastMessage(currentConversationId, answer, System.currentTimeMillis());
+            }).start();
+        }
+
+        sendMessage(answer, false, imageUrl, sources);
     }
 
     private void setInputEnabled(boolean enabled) {
