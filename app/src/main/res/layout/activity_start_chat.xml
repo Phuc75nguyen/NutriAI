@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:background="#0F0F0F"
+    android:background="?android:attr/colorBackground" 
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".LucfinFragment">
@@ -24,7 +24,7 @@
             android:text=" Lucfin Chatbot"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="?android:attr/textColorPrimary" 
             android:layout_centerInParent="true"/>
 
         <ImageView
@@ -39,8 +39,19 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:contentDescription="History Button"
-            app:tint="#FFFFFF"/>
+            app:tint="?android:attr/textColorPrimary"/>
     </RelativeLayout>
+
+    <!-- ROBOT MASCOT (Will be hidden when chat starts) -->
+    <ImageView
+        android:id="@+id/iv_robot_mascot"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rcv_chat"
@@ -80,10 +91,10 @@
             android:layout_height="60dp"
             android:background="@drawable/bg_input"
             android:drawablePadding="10dp"
-            android:hint="Generate a name of ...."
+            android:hint="Ask me anything about your meal..."
             android:padding="10dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#777777"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorHint"
             android:layout_toStartOf="@id/btn_send"
             android:layout_marginEnd="10dp"
             android:layout_centerVertical="true"

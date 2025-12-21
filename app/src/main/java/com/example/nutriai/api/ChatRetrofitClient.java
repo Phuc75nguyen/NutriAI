@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class ChatRetrofitClient {
     private static Retrofit retrofit = null;
     //private static final String BASE_URL = "http://10.0.2.2:8000/"; // cho máy ảo truy cập
-    private static final String BASE_URL = "http://192.168.1.108:8000/"; // cho smartphone truy cập
+    private static final String BASE_URL = "http://192.168.1.107:8000/"; // cho smartphone truy cập
 
     public static ApiService getApiService() {
         if (retrofit == null) {

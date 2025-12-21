@@ -12,6 +12,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -61,10 +63,38 @@ public class DashboardFragment extends Fragment {
 
         // Setup Click Listeners
         btnAvatar.setOnClickListener(v -> Toast.makeText(getContext(), "Avatar Clicked", Toast.LENGTH_SHORT).show());
-        btnSettings.setOnClickListener(v -> handleLogout());
+        
+        btnSettings.setOnClickListener(v -> showThemeDialog());
         
         // Initial load
         loadHistoryData();
+    }
+
+    private void showThemeDialog() {
+        final String[] themes = {"Light Mode", "Dark Mode", "System Default"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Choose Theme");
+        builder.setItems(themes, (dialog, which) -> {
+            int mode;
+            switch (which) {
+                case 0:
+                    mode = AppCompatDelegate.MODE_NIGHT_NO;
+                    break;
+                case 1:
+                    mode = AppCompatDelegate.MODE_NIGHT_YES;
+                    break;
+                default:
+                    mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+                    break;
+            }
+            
+            // Save and apply the new mode
+            SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+            prefs.edit().putInt("night_mode", mode).apply();
+            AppCompatDelegate.setDefaultNightMode(mode);
+            dialog.dismiss();
+        });
+        builder.show();
     }
 
     @Override
