@@ -12,6 +12,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,8 +23,9 @@ import com.example.nutriai.database.FoodHistory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
-public class DashboardFragment extends Fragment {
+public class DashboardFragment extends Fragment implements FoodHistoryAdapter.OnHistoryAction {
 
     private RecyclerView rvFoodHistory;
     private FoodHistoryAdapter adapter;
@@ -55,16 +58,42 @@ public class DashboardFragment extends Fragment {
 
         // Setup RecyclerView
         historyList = new ArrayList<>();
-        adapter = new FoodHistoryAdapter(historyList);
+        adapter = new FoodHistoryAdapter(historyList, this);
         rvFoodHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         rvFoodHistory.setAdapter(adapter);
 
         // Setup Click Listeners
-        btnAvatar.setOnClickListener(v -> Toast.makeText(getContext(), "Avatar Clicked", Toast.LENGTH_SHORT).show());
-        btnSettings.setOnClickListener(v -> handleLogout());
+        btnAvatar.setOnClickListener(v -> handleLogout());
+        btnSettings.setOnClickListener(v -> showThemeDialog());
         
         // Initial load
         loadHistoryData();
+    }
+
+    private void showThemeDialog() {
+        final String[] themes = {"Light Mode", "Dark Mode", "System Default"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Choose Theme");
+        builder.setItems(themes, (dialog, which) -> {
+            int mode;
+            switch (which) {
+                case 0:
+                    mode = AppCompatDelegate.MODE_NIGHT_NO;
+                    break;
+                case 1:
+                    mode = AppCompatDelegate.MODE_NIGHT_YES;
+                    break;
+                default:
+                    mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+                    break;
+            }
+            
+            SharedPreferences prefs = requireActivity().getSharedPreferences("AppPrefs", Context.MODE_PRIVATE);
+            prefs.edit().putInt("night_mode", mode).apply();
+            AppCompatDelegate.setDefaultNightMode(mode);
+            dialog.dismiss();
+        });
+        builder.show();
     }
 
     @Override
@@ -74,31 +103,64 @@ public class DashboardFragment extends Fragment {
     }
 
     private void loadHistoryData() {
-        // Make sure db is initialized
         if (db == null) {
             db = AppDatabase.getInstance(requireContext());
         }
         
-        // Load data from DB
-        historyList = db.foodDao().getAllHistory();
-        
-        // Update adapter
-        if (adapter != null) {
-            adapter.setData(historyList);
-        }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<FoodHistory> loadedHistory = db.foodDao().getAllHistory();
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    historyList = loadedHistory;
+                    adapter.setData(historyList);
+                });
+            }
+        });
     }
 
     private void handleLogout() {
-        // Clear SharedPreferences
         SharedPreferences prefs = requireContext().getSharedPreferences("NutriPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.remove("CURRENT_USER_ID");
-        editor.apply();
+        prefs.edit().remove("CURRENT_USER_ID").apply();
 
-        // Navigate to LoginActivity
         Intent intent = new Intent(getActivity(), LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        getActivity().finish();
+        requireActivity().finish();
+    }
+
+    // --- Implementation of OnHistoryAction interface ---
+
+    @Override
+    public void onViewImage(String path) {
+        if (path != null && !path.isEmpty()) {
+            Intent intent = new Intent(getContext(), FullScreenImageActivity.class);
+            intent.putExtra("image_path", path);
+            startActivity(intent);
+        } else {
+            Toast.makeText(getContext(), "No image available", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onDeleteItem(FoodHistory item, int position) {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Delete Item")
+            .setMessage("Are you sure you want to delete this history item?")
+            .setPositiveButton("Delete", (dialog, which) -> {
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    db.foodDao().delete(item);
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            historyList.remove(position);
+                            adapter.notifyItemRemoved(position);
+                            // You might want to update positions for the rest of the items
+                            adapter.notifyItemRangeChanged(position, historyList.size());
+                            Toast.makeText(getContext(), "Item deleted", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 }

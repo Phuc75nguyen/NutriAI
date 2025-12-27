@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.nutriai.api.ChatRequest;
 import com.example.nutriai.api.ChatResponse;
 import com.example.nutriai.api.ChatRetrofitClient;
@@ -38,6 +39,7 @@ public class LucfinFragment extends Fragment {
     private List<Message> messageList;
     private EditText etInput;
     private ImageView btnSend;
+    private ImageView ivRobotMascot; // The new mascot view
 
     // Database variables
     private long currentConversationId = -1;
@@ -53,25 +55,24 @@ public class LucfinFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize DB
         db = AppDatabase.getInstance(requireContext());
 
-        // Initialize Views
+        // Bind views
         rcvChat = view.findViewById(R.id.rcv_chat);
         etInput = view.findViewById(R.id.et_input);
         btnSend = view.findViewById(R.id.btn_send);
+        ivRobotMascot = view.findViewById(R.id.iv_robot_mascot);
         ImageView btnHistory = view.findViewById(R.id.iv_chat_icon);
 
-        // Setup History Button
+        // Load the robot animation
+        Glide.with(this).asGif().load(R.drawable.robot_animation).into(ivRobotMascot);
+
         btnHistory.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), ChatHistoryActivity.class);
             startActivity(intent);
         });
 
-        // Setup Markwon
         Markwon markwon = Markwon.create(requireContext());
-
-        // Setup RecyclerView
         messageList = new ArrayList<>();
         chatAdapter = new ChatAdapter(messageList, markwon);
         rcvChat.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -85,16 +86,15 @@ public class LucfinFragment extends Fragment {
             }
         }
 
-        // --- XỬ LÝ NÚT GỬI ---
         btnSend.setOnClickListener(v -> {
             String question = etInput.getText().toString().trim();
             if (question.isEmpty()) return;
-
-            // Hiển thị và Gửi đi giống hệt nhau (Server tự xử lý context)
             handleUserMessage(question, question);
-
             etInput.setText("");
         });
+        
+        // Set initial visibility
+        updateRobotVisibility();
     }
 
     private void loadMessagesFromDb(long convId) {
@@ -107,11 +107,10 @@ public class LucfinFragment extends Fragment {
         if (!messageList.isEmpty()) {
             rcvChat.scrollToPosition(messageList.size() - 1);
         }
+        updateRobotVisibility(); // Update visibility after loading
     }
 
-    // --- HÀM XỬ LÝ TIN NHẮN USER ---
     private void handleUserMessage(String displayContent, String apiContent) {
-        // 1. Lưu vào DB & Hiển thị
         if (currentConversationId == -1) {
             Conversation newConv = new Conversation();
             newConv.title = displayContent;
@@ -129,10 +128,7 @@ public class LucfinFragment extends Fragment {
         userMsg.timestamp = System.currentTimeMillis();
         db.chatDao().insertMessage(userMsg);
 
-        // Cập nhật UI
         sendMessage(displayContent, true, null, null);
-
-        // 2. Gửi API
         callRealApi(apiContent);
     }
 
@@ -140,12 +136,21 @@ public class LucfinFragment extends Fragment {
         messageList.add(new Message(content, isUser, imageUrl, sources));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
         rcvChat.scrollToPosition(messageList.size() - 1);
+        updateRobotVisibility(); // Update visibility when a message is sent
     }
 
     private void showTyping() {
         messageList.add(new Message(true));
         chatAdapter.notifyItemInserted(messageList.size() - 1);
         rcvChat.scrollToPosition(messageList.size() - 1);
+        updateRobotVisibility(); // Also hide when typing indicator appears
+    }
+    
+    // --- The new visibility logic ---
+    private void updateRobotVisibility() {
+        if (ivRobotMascot != null) {
+            ivRobotMascot.setVisibility(messageList.isEmpty() ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void hideTyping() {
@@ -156,9 +161,9 @@ public class LucfinFragment extends Fragment {
                 chatAdapter.notifyItemRemoved(lastIndex);
             }
         }
+        updateRobotVisibility(); // Ensure it's still hidden
     }
 
-    // --- LOGIC GỌI API & TRÁO ẢNH THÔNG MINH ---
     private void callRealApi(String query) {
         setInputEnabled(false);
         showTyping();
@@ -174,45 +179,31 @@ public class LucfinFragment extends Fragment {
                     String answer = response.body().getAnswer();
                     String serverImage = response.body().getImage();
                     List<String> sourceDocs = response.body().getSourceDocuments();
+                    
+                    String sources = (sourceDocs != null && !sourceDocs.isEmpty()) ? TextUtils.join(", ", sourceDocs) : null;
 
-                    // --- SỬA LỖI FINAL VARIABLE TẠI ĐÂY ---
-                    // Dùng biến tạm để tính toán, sau đó gán vào biến final
-                    String tempSources = null;
-                    if (sourceDocs != null && !sourceDocs.isEmpty()) {
-                        tempSources = TextUtils.join(", ", sourceDocs);
-                    }
-                    final String sources = tempSources; // Biến này là FINAL, dùng được trong Thread
-
-                    // --- BẮT ĐẦU LOGIC TRÁO ẢNH (SMART SWAP) ---
                     if ("USE_LOCAL_IMAGE".equals(serverImage)) {
-                        // CASE 1: Server ra lệnh dùng ảnh gốc trên máy
                         new Thread(() -> {
                             FoodHistory latest = db.foodDao().getLatestFood();
                             String localImagePath = null;
 
-                            // Kiểm tra hợp lệ: Có ảnh & Mới chụp trong vòng 10 phút
                             if (latest != null && latest.getImagePath() != null) {
                                 long timeDiff = System.currentTimeMillis() - latest.getTimestamp();
-                                if (timeDiff < 10 * 60 * 1000) { // 10 phút
+                                if (timeDiff < 10 * 60 * 1000) { // 10 minutes
                                     localImagePath = latest.getImagePath();
                                 }
                             }
 
-                            // Quay về UI Thread để hiển thị
                             String finalImg = localImagePath;
-                            // Ở đây dùng 'sources' (là biến final ở trên) sẽ không bị lỗi nữa
                             requireActivity().runOnUiThread(() -> {
                                 saveAndDisplayMessage(answer, finalImg, sources);
                             });
                         }).start();
-
                     } else {
-                        // CASE 2: Server gửi link ảnh thường
                         saveAndDisplayMessage(answer, serverImage, sources);
                     }
-
                 } else {
-                    sendMessage("Error: " + response.code(), false, null, null);
+                    saveAndDisplayMessage("Error: " + response.code(), null, null);
                 }
             }
 
@@ -220,12 +211,11 @@ public class LucfinFragment extends Fragment {
             public void onFailure(Call<ChatResponse> call, Throwable t) {
                 setInputEnabled(true);
                 hideTyping();
-                sendMessage("Error: " + t.getMessage(), false, null, null);
+                saveAndDisplayMessage("Error: " + t.getMessage(), null, null);
             }
         });
     }
 
-    // --- HÀM HELPER: LƯU DB VÀ HIỂN THỊ ---
     private void saveAndDisplayMessage(String answer, String imageUrl, String sources) {
         if (currentConversationId != -1) {
             new Thread(() -> {
@@ -237,11 +227,9 @@ public class LucfinFragment extends Fragment {
                 botMsg.imageUrl = imageUrl;
                 botMsg.sources = sources;
                 db.chatDao().insertMessage(botMsg);
-
                 db.chatDao().updateLastMessage(currentConversationId, answer, System.currentTimeMillis());
             }).start();
         }
-
         sendMessage(answer, false, imageUrl, sources);
     }
 

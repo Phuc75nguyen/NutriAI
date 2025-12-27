@@ -1,6 +1,7 @@
 package com.example.nutriai.database;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import java.util.List;
@@ -13,7 +14,9 @@ public interface FoodDao {
     @Query("SELECT * FROM food_history ORDER BY timestamp DESC")
     List<FoodHistory> getAllHistory();
 
-    // --- THÊM HÀM NÀY ĐỂ LẤY MÓN ĂN VỪA SCAN ---
     @Query("SELECT * FROM food_history ORDER BY timestamp DESC LIMIT 1")
     FoodHistory getLatestFood();
+
+    @Delete
+    void delete(FoodHistory food);
 }

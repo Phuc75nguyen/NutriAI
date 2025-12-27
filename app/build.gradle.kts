@@ -31,6 +31,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
+
 dependencies {
 
     implementation(libs.appcompat)
@@ -67,4 +68,7 @@ dependencies {
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     annotationProcessor("androidx.room:room-compiler:2.6.1")
+
+    // PhotoView for zoomable images
+    implementation ("com.github.chrisbanes:PhotoView:2.3.0")
 }

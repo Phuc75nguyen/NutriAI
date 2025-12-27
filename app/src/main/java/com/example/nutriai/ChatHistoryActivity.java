@@ -27,7 +27,8 @@ public class ChatHistoryActivity extends AppCompatActivity {
 
         rcvHistory = findViewById(R.id.rcv_history);
         tvEmpty = findViewById(R.id.tv_empty);
-        findViewById(R.id.btn_back_history).setOnClickListener(v -> finish());
+        // --- FIX: Use OnBackPressedDispatcher for safer navigation ---
+        findViewById(R.id.btn_back_history).setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
         
         db = AppDatabase.getInstance(this);
 
@@ -54,7 +55,6 @@ public class ChatHistoryActivity extends AppCompatActivity {
             adapter = new HistoryAdapter(conversations, this::openConversation, this::showDeleteConfirmationDialog);
             rcvHistory.setAdapter(adapter);
         } else {
-            // Sử dụng phương thức updateData mới thay vì notifyDataSetChanged trực tiếp
             adapter.updateData(conversations);
         }
     }

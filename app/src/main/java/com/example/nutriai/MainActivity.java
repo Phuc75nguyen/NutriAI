@@ -1,10 +1,14 @@
 package com.example.nutriai;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MenuItem;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -18,13 +22,28 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // --- APPLY THEME ON STARTUP ---
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        int savedMode = prefs.getInt("night_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        AppCompatDelegate.setDefaultNightMode(savedMode);
+        // ------------------------------
+
         setContentView(R.layout.activity_main);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // 3. Xử lý sự kiện click
-        // Setup listener BEFORE setting selected item to ensure logic flows correctly if needed,
-        // though typically setSelectedItemId triggers the listener.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (bottomNavigationView.getSelectedItemId() != R.id.nav_home) {
+                    bottomNavigationView.setSelectedItemId(R.id.nav_home);
+                } else {
+                    moveTaskToBack(true);
+                }
+            }
+        });
+
         bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -35,18 +54,17 @@ public class MainActivity extends AppCompatActivity {
                     selectedFragment = new DashboardFragment();
                 } else if (itemId == R.id.nav_chat) {
                     LucfinFragment chatFragment = new LucfinFragment();
-                    // Check logic for pending ID
                     if (pendingConversationId != -1) {
                         Bundle args = new Bundle();
                         args.putLong("CONVERSATION_ID", pendingConversationId);
                         chatFragment.setArguments(args);
-                        pendingConversationId = -1; // Reset immediately
+                        pendingConversationId = -1;
                     }
                     selectedFragment = chatFragment;
                 } else if (itemId == R.id.nav_scan) {
                     Intent scanIntent = new Intent(MainActivity.this, ScaningFoodActivity.class);
                     startActivity(scanIntent);
-                    return false; // Don't select the item, it's an activity
+                    return false;
                 }
 
                 if (selectedFragment != null) {
@@ -76,21 +94,15 @@ public class MainActivity extends AppCompatActivity {
         handleIntent(intent);
 
         if (pendingConversationId != -1) {
-            // Check if we are ALREADY on the chat tab
             if (bottomNavigationView.getSelectedItemId() == R.id.nav_chat) {
-                // Case A: Already on Chat tab.
-                // setSelectedItemId won't trigger listener if item is already selected.
-                // Force reload manually.
                 LucfinFragment chatFragment = new LucfinFragment();
                 Bundle args = new Bundle();
                 args.putLong("CONVERSATION_ID", pendingConversationId);
                 chatFragment.setArguments(args);
                 
                 loadFragment(chatFragment);
-                pendingConversationId = -1; // Reset immediately
+                pendingConversationId = -1;
             } else {
-                // Case B: Switching from another tab.
-                // This will trigger onNavigationItemSelected, which handles the logic.
                 bottomNavigationView.setSelectedItemId(R.id.nav_chat);
             }
         }
