@@ -22,14 +22,27 @@ import java.util.Locale;
 public class FoodHistoryAdapter extends RecyclerView.Adapter<FoodHistoryAdapter.ViewHolder> {
 
     private List<FoodHistory> list;
+    private final OnHistoryAction listener;
 
-    public FoodHistoryAdapter(List<FoodHistory> list) {
+    // Interface for handling actions
+    public interface OnHistoryAction {
+        void onViewImage(String path);
+        void onDeleteItem(FoodHistory item, int position);
+    }
+
+    public FoodHistoryAdapter(List<FoodHistory> list, OnHistoryAction listener) {
         this.list = list;
+        this.listener = listener;
     }
 
     public void setData(List<FoodHistory> list) {
         this.list = list;
         notifyDataSetChanged();
+    }
+    
+    public void removeItem(int position) {
+        list.remove(position);
+        notifyItemRemoved(position);
     }
 
     @NonNull
@@ -50,28 +63,27 @@ public class FoodHistoryAdapter extends RecyclerView.Adapter<FoodHistoryAdapter.
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm - dd/MM/yyyy", Locale.getDefault());
         holder.tvTimestamp.setText(sdf.format(new Date(item.getTimestamp())));
 
-        if (item.getImagePath() != null) {
+        if (item.getImagePath() != null && !item.getImagePath().isEmpty()) {
             File imgFile = new File(item.getImagePath());
             if (imgFile.exists()) {
                 Glide.with(holder.itemView.getContext())
                         .load(imgFile)
                         .into(holder.ivFoodImage);
             } else {
-                holder.ivFoodImage.setImageResource(R.drawable.salad_image); // Default placeholder
+                holder.ivFoodImage.setImageResource(R.drawable.salad_image);
             }
         } else {
             holder.ivFoodImage.setImageResource(R.drawable.salad_image);
         }
+        
+        // Set Click Listeners
+        holder.ivFoodImage.setOnClickListener(v -> listener.onViewImage(item.getImagePath()));
+        holder.btnDelete.setOnClickListener(v -> listener.onDeleteItem(item, holder.getAdapterPosition()));
 
-        // Handle Expand/Collapse
         holder.btnExpand.setOnClickListener(v -> {
-            if (holder.tvSummaryContent.getVisibility() == View.VISIBLE) {
-                holder.tvSummaryContent.setVisibility(View.GONE);
-                holder.btnExpand.setRotation(-90);
-            } else {
-                holder.tvSummaryContent.setVisibility(View.VISIBLE);
-                holder.btnExpand.setRotation(90);
-            }
+            boolean isVisible = holder.tvSummaryContent.getVisibility() == View.VISIBLE;
+            holder.tvSummaryContent.setVisibility(isVisible ? View.GONE : View.VISIBLE);
+            holder.btnExpand.setRotation(isVisible ? -90 : 90);
         });
     }
 
@@ -83,7 +95,7 @@ public class FoodHistoryAdapter extends RecyclerView.Adapter<FoodHistoryAdapter.
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTimestamp, tvFoodName, tvFoodWeight, tvSummaryContent;
         ImageView ivFoodImage;
-        ImageButton btnExpand;
+        ImageButton btnExpand, btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -93,6 +105,7 @@ public class FoodHistoryAdapter extends RecyclerView.Adapter<FoodHistoryAdapter.
             tvSummaryContent = itemView.findViewById(R.id.tv_item_summary_content);
             ivFoodImage = itemView.findViewById(R.id.iv_item_food_image);
             btnExpand = itemView.findViewById(R.id.btn_expand);
+            btnDelete = itemView.findViewById(R.id.btn_delete);
         }
     }
 }
