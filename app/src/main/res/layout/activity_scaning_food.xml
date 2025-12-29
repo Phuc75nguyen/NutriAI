@@ -12,14 +12,16 @@
     <androidx.camera.view.PreviewView
         android:id="@+id/camera_preview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent" >
+
+        <View
+            android:id="@+id/overlay_dark"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000" />
+    </androidx.camera.view.PreviewView>
 
     <!-- Mờ nền ngoài khung scan -->
-    <View
-        android:id="@+id/overlay_dark"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#80000000" />
 
     <!-- Khung quét trong suốt -->
 
@@ -33,6 +35,18 @@
         android:background="@android:color/transparent"
         android:src="@drawable/ic_close"
         app:tint="@android:color/white" />
+
+    <ImageButton
+        android:id="@+id/btn_flash"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_toStartOf="@id/btn_close"
+        android:layout_alignTop="@id/btn_close"
+        android:layout_marginEnd="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_flash_off"
+        app:tint="@android:color/white"
+        android:contentDescription="Bật tắt đèn Flash" />
 
     <!-- Tiêu đề -->
     <TextView
@@ -95,7 +109,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_above="@+id/preview_buttons_container"
-            android:scaleType="fitCenter" />
+            android:scaleType="centerCrop" />
 
         <LinearLayout
             android:id="@+id/preview_buttons_container"

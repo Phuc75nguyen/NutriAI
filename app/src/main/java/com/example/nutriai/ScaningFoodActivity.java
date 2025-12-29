@@ -1,11 +1,14 @@
 package com.example.nutriai;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector; // Import mới cho Zoom
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -17,9 +20,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.MeteringPoint;
+import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
@@ -36,13 +43,14 @@ import java.io.OutputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class ScaningFoodActivity extends AppCompatActivity {
 
     private static final String TAG = "ScaningFoodActivity";
 
     private PreviewView cameraPreview;
-    private ImageButton btnCapture, btnClose, btnGallery;
+    private ImageButton btnCapture, btnClose, btnGallery, btnFlash;
     private RelativeLayout previewLayout;
     private ImageView ivCapturedPreview;
     private Button btnRetake, btnAnalyze;
@@ -52,6 +60,13 @@ public class ScaningFoodActivity extends AppCompatActivity {
     private ExecutorService ioExecutor;
     private ProcessCameraProvider cameraProvider;
     private File currentPhotoFile;
+
+    // Biến quan trọng để điều khiển Camera
+    private Camera camera;
+    private boolean isFlashOn = false;
+
+    // [MỚI] Biến phát hiện cử chỉ 2 ngón tay để Zoom
+    private ScaleGestureDetector scaleGestureDetector;
 
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     private final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
@@ -75,10 +90,12 @@ public class ScaningFoodActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scaning_food);
 
+        // Ánh xạ View
         cameraPreview = findViewById(R.id.camera_preview);
         btnCapture = findViewById(R.id.btn_capture);
         btnClose = findViewById(R.id.btn_close);
         btnGallery = findViewById(R.id.btn_gallery);
+        btnFlash = findViewById(R.id.btn_flash);
         previewLayout = findViewById(R.id.preview_layout);
         ivCapturedPreview = findViewById(R.id.iv_captured_preview);
         btnRetake = findViewById(R.id.btn_retake);
@@ -92,7 +109,13 @@ public class ScaningFoodActivity extends AppCompatActivity {
         btnGallery.setOnClickListener(v -> galleryLauncher.launch("image/*"));
         btnClose.setOnClickListener(v -> finish());
 
-        // Logic nút Chụp lại: Chỉ cần ẩn ảnh preview đi, Camera thực tế vẫn đang chạy bên dưới
+        // Cài đặt chức năng Flash
+        setupFlashButton();
+
+        // [CẬP NHẬT] Cài đặt cảm ứng (Bao gồm cả Focus và Zoom)
+        setupTouchListener();
+
+        // Logic nút Chụp lại
         btnRetake.setOnClickListener(v -> {
             previewLayout.setVisibility(View.GONE);
             currentPhotoFile = null;
@@ -121,8 +144,6 @@ public class ScaningFoodActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // Không cần thiết phải unbind ở đây nếu dùng bindToLifecycle,
-        // nhưng giữ lại cũng không sao.
     }
 
     @Override
@@ -153,16 +174,21 @@ public class ScaningFoodActivity extends AppCompatActivity {
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
                 try {
-                    // Unbind use cases before rebinding
                     cameraProvider.unbindAll();
 
-                    // Bind use cases to camera
-                    cameraProvider.bindToLifecycle(
+                    // --- Gán đối tượng Camera ---
+                    camera = cameraProvider.bindToLifecycle(
                             this,
                             cameraSelector,
                             preview,
-                            imageCapture // Quan trọng: Phải bind cái này
+                            imageCapture
                     );
+
+                    // --- [MỚI] 1. CÀI ĐẶT ZOOM MẶC ĐỊNH 2.5x ---
+                    // Giúp ảnh không bị xa, vật thể to rõ ngay khi mở camera
+                    if (camera != null) {
+                        camera.getCameraControl().setZoomRatio(2.0f);
+                    }
 
                 } catch (Exception exc) {
                     Log.e(TAG, "Use case binding failed", exc);
@@ -175,29 +201,20 @@ public class ScaningFoodActivity extends AppCompatActivity {
     }
 
     private void takePhoto() {
-        // Kiểm tra imageCapture có null không
         if (imageCapture == null) return;
 
-        // --- SỬA LỖI Ở ĐÂY: TUYỆT ĐỐI KHÔNG GỌI unbindAll() ---
-        // Nếu gọi unbindAll() lúc này, Camera sẽ bị ngắt kết nối ngay lập tức -> Lỗi Not Bound.
-
-        // Tạo file lưu ảnh
         File photoFile = new File(getCacheDir(), "food_capture_" + System.currentTimeMillis() + ".jpg");
 
         ImageCapture.OutputFileOptions outputOptions =
                 new ImageCapture.OutputFileOptions.Builder(photoFile).build();
 
-        // Chụp ảnh
         imageCapture.takePicture(
                 outputOptions,
                 ContextCompat.getMainExecutor(this),
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(@NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        // Ảnh chụp thành công, lưu vào biến tạm
                         currentPhotoFile = photoFile;
-
-                        // Hiển thị ảnh vừa chụp lên màn hình (che lấp Camera Preview)
                         showPreview(photoFile);
                     }
 
@@ -211,7 +228,6 @@ public class ScaningFoodActivity extends AppCompatActivity {
     }
 
     private void showPreview(File file) {
-        // Dùng Glide load ảnh vào ImageView và hiện layout Preview lên
         Glide.with(this).load(file).into(ivCapturedPreview);
         previewLayout.setVisibility(View.VISIBLE);
     }
@@ -259,5 +275,67 @@ public class ScaningFoodActivity extends AppCompatActivity {
                 finish();
             }
         }
+    }
+
+    // --- CẤU HÌNH FLASH (TORCH) ---
+    private void setupFlashButton() {
+        btnFlash.setOnClickListener(v -> {
+            if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+                isFlashOn = !isFlashOn;
+                camera.getCameraControl().enableTorch(isFlashOn);
+                if (isFlashOn) {
+                    btnFlash.setImageResource(R.drawable.ic_flash_on);
+                } else {
+                    btnFlash.setImageResource(R.drawable.ic_flash_off);
+                }
+            } else {
+                Toast.makeText(this, "Thiết bị không có đèn Flash", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // --- [MỚI] CẤU HÌNH CẢM ỨNG: ZOOM 2 NGÓN + TAP TO FOCUS ---
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupTouchListener() {
+        // 1. Khởi tạo bộ nhận diện cử chỉ Zoom (Pinch-to-zoom)
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                if (camera == null) return false;
+
+                // Lấy mức Zoom hiện tại
+                float currentZoomRatio = camera.getCameraInfo().getZoomState().getValue().getZoomRatio();
+
+                // Tính mức Zoom mới dựa trên độ mở của 2 ngón tay
+                float delta = detector.getScaleFactor();
+                camera.getCameraControl().setZoomRatio(currentZoomRatio * delta);
+                return true;
+            }
+        });
+
+        // 2. Gán sự kiện chạm vào màn hình
+        cameraPreview.setOnTouchListener((view, event) -> {
+            // A. Gửi sự kiện cho bộ xử lý Zoom trước
+            scaleGestureDetector.onTouchEvent(event);
+
+            // B. Xử lý Lấy nét (Focus) khi nhấc tay lên (ACTION_UP)
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                MeteringPointFactory factory = cameraPreview.getMeteringPointFactory();
+                MeteringPoint point = factory.createPoint(event.getX(), event.getY());
+
+                FocusMeteringAction action = new FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF)
+                        .setAutoCancelDuration(3, TimeUnit.SECONDS)
+                        .build();
+
+                if (camera != null) {
+                    camera.getCameraControl().startFocusAndMetering(action);
+                }
+                view.performClick();
+                return true;
+            }
+
+            // Cần return true để tiếp tục nhận diện các cử chỉ kéo/thả tiếp theo
+            return true;
+        });
     }
 }
